@@ -12,8 +12,8 @@ export default defineConfig({
     ,
     // Proxy para redirigir llamadas /api al backend en desarrollo
     proxy: {
-      '/api': {
-        target: 'http://localhost:3000',
+      '/soporteback/api': {
+        target: 'http://localhost:3002',
         changeOrigin: true,
         secure: false
       }
