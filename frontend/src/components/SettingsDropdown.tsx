@@ -50,11 +50,11 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({ onClose }) => {
         compactMode: false
       },
       company: {
-        name: 'Secretaría de Bienestar',
-        fullName: 'Secretaría de Bienestar del Estado de Sonora',
-        address: 'Hermosillo, Sonora, México',
-        phone: '+52 662 123 4567',
-        email: 'contacto@bienestar.sonora.gob.mx'
+        name: 'Consultorio Dental',
+        fullName: 'Consultorio Dental Integral',
+        address: 'Ciudad, Estado, México',
+        phone: '+52 555 123 4567',
+        email: 'contacto@consultorio.com'
       }
     };
   });
@@ -632,7 +632,7 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({ onClose }) => {
 
         <div className={styles.footer}>
           <button className={styles.cancelButton} onClick={onClose}>
-            Cancelar
+            Regresar
           </button>
           <button className={styles.saveButton} onClick={saveSettings}>
             <Save size={16} />

@@ -330,7 +330,7 @@ const Profile: React.FC = () => {
                 onClick={() => setShowPasswordModal(false)}
                 className="btn btn-outline"
               >
-                Cancelar
+                Regresar
               </button>
               <button
                 type="submit"

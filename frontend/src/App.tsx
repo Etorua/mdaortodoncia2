@@ -12,6 +12,7 @@ import ReportsPage from '@/pages/Reports';
 import ProfilePage from '@/pages/Profile';
 import PermissionsPage from '@/pages/Permissions';
 import DepartmentsPage from '@/pages/Departments';
+import PatientsPage from '@/pages/Patients';
 import Unauthorized from '@/pages/Unauthorized';
 import NotFound from '@/pages/NotFound';
 import Insumos from '@/pages/Insumos';
@@ -84,6 +85,18 @@ const AppContent: React.FC = () => {
                 requiredAction="view"
               >
                 <UsersPage />
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/pacientes"
+            element={
+              <ProtectedRoute 
+                requiredModule="users" 
+                requiredAction="view"
+              >
+                <PatientsPage />
               </ProtectedRoute>
             }
           />

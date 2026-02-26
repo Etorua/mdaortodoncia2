@@ -712,7 +712,7 @@ const TicketForm: React.FC<TicketFormProps> = ({
             className="btn btn-secondary"
             onClick={onCancel}
           >
-            Cancelar
+            Regresar
           </button>
         )}
         <button 

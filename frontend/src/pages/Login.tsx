@@ -58,18 +58,18 @@ const Login = () => {
       {/* Contenedor Izquierdo (Textos) */}
       <div className={styles.leftContent}>
         <div className={styles.textContent}>
-          <h1 className={styles.mainTitle}>SECRETARIA DE BIENESTAR DEL ESTADO DE SONORA</h1>
+          <h1 className={styles.mainTitle}>CONSULTORIO DENTAL INTEGRAL</h1>
           <p className={styles.description}>
-            Sistema interno para el reporte de las y los servidores públicos de la secretaría. Gestión eficiente de recursos y mantenimiento para el bienestar de Sonora
+            Sistema interno para la gestión del consultorio dental. Mantenimiento de equipos, control de inventario y optimización de servicios odontológicos.
           </p>
           <p className={styles.slogan}>
-            SISTEMA INTERNO DE MANTENIMIENTO
+            SISTEMA DE GESTIÓN CLÍNICA
           </p>
         </div>
         
         <div className={styles.footerContent}>
           <div className={styles.address}>
-            Gran Plaza, Blvr. P.º Río Sonora Nte. 76-Int. 207, Proyecto Rio Sonora Hermosillo XXI, 83270 Hermosillo, Sonora, México
+            Calle Principal #123, Colonia Centro. Horario de atención: Lunes a Viernes 9:00 - 18:00
           </div>
           <div className={styles.privacyLink}>Aviso de privacidad.</div>
         </div>
@@ -189,11 +189,11 @@ const Login = () => {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px', gap: '10px' }}>
               <Mail size={18} color="#2563eb" />
-              <span style={{ fontWeight: 500, color: '#374151' }}>yesmil.figueroa@sonora.gob.mx</span>
+              <span style={{ fontWeight: 500, color: '#374151' }}>soporte@consultorio.com</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Phone size={18} color="#2563eb" />
-              <span style={{ fontWeight: 500, color: '#374151' }}>Ext. 46041</span>
+              <span style={{ fontWeight: 500, color: '#374151' }}>Ext. 101</span>
             </div>
           </div>
 

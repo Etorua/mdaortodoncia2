@@ -107,7 +107,7 @@ const Departments: React.FC = () => {
       setLoading(true);
       const dataToExport = departments.map(dept => {
         const row: Record<string, any> = {};
-        if (visibleColumns.includes('dependencia')) row['Dependencia'] = 'Secretaria de Bienestar';
+        if (visibleColumns.includes('dependencia')) row['Dependencia'] = 'Consultorio Dental';
         if (visibleColumns.includes('display_name')) row['Departamento'] = dept.display_name;
         if (visibleColumns.includes('is_active')) row['Activo'] = dept.is_active ? 'Sí' : 'No';
         return row;
@@ -133,7 +133,7 @@ const Departments: React.FC = () => {
     {
       label: 'Dependencia',
       key: 'dependencia',
-      render: () => 'Secretaria de Bienestar'
+      render: () => 'Consultorio Dental'
     },
     { 
       label: 'Departamento', 
@@ -370,7 +370,7 @@ const Departments: React.FC = () => {
                 {isEditing ? 'Actualizar' : 'Crear'}
               </button>
               <button type="button" className="btn btn-outline" onClick={handleCloseModal}>
-                Cancelar
+                Regresar
               </button>
             </div>
           </form>

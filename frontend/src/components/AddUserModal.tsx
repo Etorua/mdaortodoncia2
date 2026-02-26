@@ -165,7 +165,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ onSubmit, loading = false, 
             onClick={onCancel}
             disabled={loading}
           >
-            Cancelar
+            Regresar
           </button>
         )}
         <button 

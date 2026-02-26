@@ -32,34 +32,32 @@ export async function POST(request: Request) {
     const doc = new PDFDocument({ size: 'LETTER', margin: 30 });
     
     // Configuración de colores y medidas exactas
-    const govPurple = '#8B2635'; // Color exacto del gobierno de Sonora
+    const govPurple = '#2563eb'; // Color azul clínico estándar
     const pageWidth = 612 - 60; // Ancho útil (letter - márgenes)
     const margin = 30;
     
     let yPos = 50;
     
-    // ========= ENCABEZADO EXACTO =========
+    // ========= ENCABEZADO MODIFICADO =========
     
-    // Logo placeholder (cuadro para logo del gobierno)
-    doc.rect(margin, yPos, 100, 80)
-       .stroke('#DDDDDD');
-    
-    // Texto del logo
-    doc.fontSize(9)
+    // Logo placeholder (cuadro para logo del consultorio)
+    // doc.image('path/to/logo.png', margin, yPos, { width: 80 }) // Placeholder para futura imagen
+
+    // Texto del Consultorio
+    doc.fontSize(14)
        .fillColor('#000000')
        .font('Helvetica-Bold')
-       .text('GOBIERNO', margin + 10, yPos + 15)
-       .text('DEL ESTADO', margin + 10, yPos + 28)
-       .text('DE SONORA', margin + 10, yPos + 41)
-       .fontSize(7)
+       .text('CONSULTORIO', margin + 10, yPos + 15)
+       .text('DENTAL', margin + 10, yPos + 30)
+       .fontSize(10)
        .font('Helvetica')
-       .text('2021-2027', margin + 10, yPos + 58);
+       .text('SONRISAS', margin + 10, yPos + 45);
     
-    // Título principal alineado exactamente como el documento
+    // Título principal alineado
     doc.fontSize(16)
        .fillColor('#000000')
        .font('Helvetica-Bold')
-       .text('REPORTE DE SERVICIO', margin + 150, yPos + 25, { 
+       .text('REPORTE DE SERVICIO DENTAL', margin + 150, yPos + 25, { 
          align: 'center',
          width: pageWidth - 250 
        });
@@ -67,7 +65,7 @@ export async function POST(request: Request) {
     // Subtítulo del departamento
     doc.fontSize(10)
        .font('Helvetica')
-       .text('SECRETARÍA DE DESARROLLO SOCIAL', margin + 150, yPos + 50, {
+       .text('MANTENIMIENTO DE EQUIPOS Y CLÍNICA', margin + 150, yPos + 50, {
          align: 'center',
          width: pageWidth - 250
        });

@@ -570,7 +570,7 @@ const Activities: React.FC = () => {
             </div>
 
             <div style={{ marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                <button type="button" onClick={() => setIsModalOpen(false)} style={{ padding: '8px 16px', borderRadius: '4px', border: '1px solid #ccc', background: 'white' }}>Cancelar</button>
+                <button type="button" onClick={() => setIsModalOpen(false)} style={{ padding: '8px 16px', borderRadius: '4px', border: '1px solid #ccc', background: 'white' }}>Regresar</button>
                 <button type="submit" style={{ padding: '8px 16px', borderRadius: '4px', border: 'none', background: '#0052cc', color: 'white' }}>Guardar</button>
             </div>
         </form>

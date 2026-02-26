@@ -32,6 +32,7 @@ import activityRoutes from './routes/activities.js';
 import dashboardRoutes from './routes/dashboard.js';
 import insumosRoutes from './routes/insumos.js';
 import departmentRoutes from './routes/departments.js';
+import patientRoutes from './routes/patients.js';
 
 // Crear app Koa
 const app = new Koa();
@@ -171,6 +172,7 @@ apiRouter.use(notificationRoutes.routes(), notificationRoutes.allowedMethods());
 apiRouter.use(dashboardRoutes.routes(), dashboardRoutes.allowedMethods());
 apiRouter.use(insumosRoutes.routes(), insumosRoutes.allowedMethods());
 apiRouter.use(departmentRoutes.routes(), departmentRoutes.allowedMethods());
+apiRouter.use(patientRoutes.routes(), patientRoutes.allowedMethods());
 
 // Registrar routers
 app.use(router.routes(), router.allowedMethods());

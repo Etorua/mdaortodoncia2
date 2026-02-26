@@ -344,7 +344,7 @@ const AddEquipmentModal: React.FC<AddEquipmentModalProps> = ({
             className="btn btn-secondary"
             onClick={onCancel}
           >
-            Cancelar
+            Regresar
           </button>
         )}
         <button 

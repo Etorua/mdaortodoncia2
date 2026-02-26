@@ -23,12 +23,12 @@ export const reportService = {
             children: [
               // Encabezado
               new Paragraph({
-                text: 'SECRETARÍA DE BIENESTAR DEL ESTADO DE SONORA',
+                text: 'CONSULTORIO DENTAL "SONRISAS"',
                 heading: HeadingLevel.TITLE,
                 alignment: AlignmentType.CENTER,
               }),
               new Paragraph({
-                text: 'SISTEMA DE MANTENIMIENTO DE EQUIPOS DE CÓMPUTO',
+                text: 'SISTEMA DE GESTIÓN Y MANTENIMIENTO',
                 alignment: AlignmentType.CENTER,
                 spacing: { after: 200 },
               }),

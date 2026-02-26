@@ -189,8 +189,8 @@ const ReportsPage: React.FC = () => {
         </head>
         <body>
           <div class="header">
-            <div class="logo">🏛️ GOBIERNO DE SONORA</div>
-            <div class="subtitle">Secretaría de Bienestar del Estado de Sonora</div>
+            <div class="logo">🦷 CONSULTORIO DENTAL "SONRISAS"</div>
+            <div class="subtitle">Gestión Integral de Mantenimiento</div>
             <div class="subtitle">Reporte General de Tickets - ${new Date().toLocaleDateString('es-ES')}</div>
           </div>
 

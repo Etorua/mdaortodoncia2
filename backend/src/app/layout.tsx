@@ -4,26 +4,26 @@ import { UpdateProvider } from './components/hooks/useEventUpdates';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: '🖥️⚙️ Sistema Interno - Mantenimiento de Equipos 🔧💻',
-  description: 'Sistema de Mantenimiento de Equipos de Cómputo - Secretaría de Bienestar del Estado de Sonora',
-  keywords: 'sistema, mantenimiento, equipos, computo, secretaria, bienestar, sonora, interno',
-  authors: [{ name: 'Secretaría de Bienestar del Estado de Sonora' }],
-  creator: 'Secretaría de Bienestar del Estado de Sonora',
-  publisher: 'Gobierno del Estado de Sonora',
+  title: '🦷 Sistema Interno - Consultorio Dental',
+  description: 'Sistema de Gestión y Mantenimiento - Consultorio Dental',
+  keywords: 'sistema, mantenimiento, equipos, dental, cosultorio, interno',
+  authors: [{ name: 'Consultorio Dental' }],
+  creator: 'Consultorio Dental',
+  publisher: 'Consultorio Dental',
   robots: 'noindex, nofollow', // Sistema interno, no indexar
   icons: {
     icon: '/favicon.ico',
   },
   openGraph: {
-    title: '🖥️⚙️ Sistema Interno - Mantenimiento de Equipos 🔧💻',
-    description: 'Sistema de Mantenimiento de Equipos de Cómputo - Secretaría de Bienestar del Estado de Sonora',
+    title: '🦷 Sistema Interno - Consultorio Dental 🔧',
+    description: 'Sistema de Gestión y Mantenimiento - Consultorio Dental',
     type: 'website',
     locale: 'es_MX',
   },
   twitter: {
     card: 'summary',
-    title: '🖥️⚙️ Sistema Interno - Mantenimiento de Equipos 🔧💻',
-    description: 'Sistema de Mantenimiento de Equipos de Cómputo',
+    title: '🦷 Sistema Interno - Consultorio Dental 🔧',
+    description: 'Sistema de Gestión y Mantenimiento - Consultorio Dental',
   },
 };
 
@@ -35,8 +35,8 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
-        <title>🖥️⚙️ Sistema Interno - Mantenimiento de Equipos 🔧💻</title>
-        <meta name="description" content="Sistema de Mantenimiento de Equipos de Cómputo - Secretaría de Bienestar del Estado de Sonora" />
+        <title>🦷 Sistema Interno - Consultorio Dental</title>
+        <meta name="description" content="Sistema de Gestión y Mantenimiento - Consultorio Dental" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body>

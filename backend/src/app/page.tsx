@@ -20,7 +20,7 @@ export default function HomePage(): JSX.Element {
 
   useEffect(() => {
     // Cambiar título de la página
-    document.title = '🔐🖥️ Acceso - Sistema Interno de Mantenimiento ⚙️💻';
+    document.title = '🔐🦷 Acceso - Consultorio Dental SONRISAS';
     
     // Este código se ejecuta solo en el cliente
     const bg = localStorage.getItem('customLoginBg');
@@ -123,10 +123,10 @@ export default function HomePage(): JSX.Element {
   <div className={styles.heroInner}>
           <div className={styles.organizationTitle}>
             <h1 style={{ color: 'white', fontSize: '28px', fontWeight: '700', margin: '0 0 16px 0', textShadow: '0 2px 4px rgba(0,0,0,0.3)', letterSpacing: '0.5px' }}>
-              Secretaría de Bienestar Del Estado de Sonora
+              CONSULTORIO DENTAL "SONRISAS"
             </h1>
           </div>
-          <div className={styles.title}>SISTEMA DE GESTIÓN DE MANTENIMIENTO</div>
+          <div className={styles.title}>SISTEMA DE GESTIÓN Y MANTENIMIENTO</div>
           <div className={styles.lead}>Sistema de recepción de solicitudes de mantenimiento de las y los servidores</div>
           <div style={{ marginTop: 18 }} className={styles.muted}>Gran Plaza, Blvr. P.º Río Sonora Nte. 76-Int. 207, Proyecto Rio Sonora Hermosillo XXI, 83270, Hermosillo, Sonora, México.</div>
           <div style={{ marginTop: 12 }}><a href="#" style={{ color: 'white', textDecoration: 'underline' }}>Avisos de privacidad</a></div>

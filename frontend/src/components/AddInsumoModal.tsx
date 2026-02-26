@@ -56,7 +56,7 @@ const AddInsumoModal: React.FC<AddInsumoModalProps> = ({ onSubmit, loading = fal
         </div>
       </div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 24 }}>
-        <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={loading}>Cancelar</button>
+        <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={loading}>Regresar</button>
         <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Guardando...' : 'Guardar'}</button>
       </div>
     </form>

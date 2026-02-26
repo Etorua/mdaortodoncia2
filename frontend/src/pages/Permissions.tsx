@@ -618,7 +618,7 @@ const PermissionsPage: React.FC = () => {
                   disabled={saving}
                 >
                   <X size={16} />
-                  Cancelar
+                  Regresar
                 </button>
                 
                 <button

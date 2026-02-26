@@ -44,6 +44,13 @@ const menuItems: MenuItem[] = [
     module: 'users'
   },
   {
+    path: '/pacientes',
+    label: 'Pacientes',
+    icon: Users,
+    roles: ['admin'],
+    module: 'users'
+  },
+  {
     path: '/departamentos',
     label: 'Departamentos',
     icon: Building,
@@ -162,8 +169,8 @@ const Sidebar: React.FC = () => {
           <div className={styles.logo}>
             {!isCollapsed && (
               <div className={styles.logoText}>
-                <h2>Secretaría de Bienestar</h2>
-                <p>Sonora</p>
+                <h2>Consultorio Dental</h2>
+                <p>Gestión</p>
               </div>
             )}
           </div>
