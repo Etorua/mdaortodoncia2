@@ -58,18 +58,18 @@ const Login = () => {
       {/* Contenedor Izquierdo (Textos) */}
       <div className={styles.leftContent}>
         <div className={styles.textContent}>
-          <h1 className={styles.mainTitle}>CONSULTORIO DENTAL INTEGRAL</h1>
+          <h1 className={styles.mainTitle}>MDA ORTODONCIA</h1>
           <p className={styles.description}>
-            Sistema interno para la gestión del consultorio dental. Mantenimiento de equipos, control de inventario y optimización de servicios odontológicos.
+            DRA. Maria De Los Angeles Lopez Galaz
           </p>
           <p className={styles.slogan}>
-            SISTEMA DE GESTIÓN CLÍNICA
+            Consultorio Dental
           </p>
         </div>
         
         <div className={styles.footerContent}>
           <div className={styles.address}>
-            Calle Principal #123, Colonia Centro. Horario de atención: Lunes a Viernes 9:00 - 18:00
+            Bulevar José María Morelos 1, Issste Federal, 83148 Hermosillo, Son.: Lunes a Sabado 9:00 - 18:00
           </div>
           <div className={styles.privacyLink}>Aviso de privacidad.</div>
         </div>
