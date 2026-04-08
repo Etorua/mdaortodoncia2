@@ -37,7 +37,7 @@ class DepartmentController {
 
   async create(ctx) {
     try {
-      const { display_name, is_active } = ctx.request.body;
+      const { display_name, description, price, is_active } = ctx.request.body;
       
       if (!display_name) {
         ctx.status = 400;
@@ -47,6 +47,8 @@ class DepartmentController {
 
       const department = await Department.create({
         display_name,
+        description: description || null,
+        price: price !== undefined && price !== '' ? Number(price) : null,
         is_active: is_active !== undefined ? is_active : true
       });
 
@@ -62,7 +64,7 @@ class DepartmentController {
   async update(ctx) {
     try {
       const { id } = ctx.params;
-      const { display_name, is_active } = ctx.request.body;
+      const { display_name, description, price, is_active } = ctx.request.body;
       
       const department = await Department.findByPk(id);
       
@@ -74,6 +76,8 @@ class DepartmentController {
 
       await department.update({
         display_name: display_name || department.display_name,
+        description: description !== undefined ? description : department.description,
+        price: price !== undefined ? (price === '' ? null : Number(price)) : department.price,
         is_active: is_active !== undefined ? is_active : department.is_active
       });
 

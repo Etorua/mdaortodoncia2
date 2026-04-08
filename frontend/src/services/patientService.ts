@@ -3,8 +3,11 @@ import { apiClient } from './apiClient';
 
 export interface CreatePatientForm {
   nombre_completo: string;
-  correo: string;
-  telefono: string;
+  correo?: string;
+  telefono?: string;
+  direccion?: string;
+  fecha_nacimiento?: string;
+  genero?: string;
   antecedentes?: string;
 }
 

@@ -158,6 +158,17 @@ const Login = () => {
                 {isLoading ? 'Iniciando...' : 'Iniciar sesión'}
               </button>
             </div>
+
+            <div className={styles.submitSection} style={{ marginTop: '-8px' }}>
+              <button
+                className={styles.btnWhite}
+                type="button"
+                onClick={() => navigate('/mis-citas')}
+                style={{ backgroundColor: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,0.7)' }}
+              >
+                Ver o solicitar cita
+              </button>
+            </div>
           </form>
         </div>
       </div>

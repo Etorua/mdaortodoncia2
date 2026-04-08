@@ -56,7 +56,9 @@ class Ticket extends Model {
       serviceType: this.service_type,
       reportedById: this.reported_by_id,
       assignedToId: this.assigned_to_id,
+      patientId: this.patient_id,
       equipmentId: this.equipment_id,
+      scheduledFor: this.scheduled_for,
       diagnosis: this.diagnosis,
       solution: this.solution,
       parts: this.parts, // El getter se encarga de parsear
@@ -72,6 +74,7 @@ class Ticket extends Model {
       updatedAt: this.updatedAt,
       reportedBy: this.reportedBy && typeof this.reportedBy.toPublicJSON === 'function' ? this.reportedBy.toPublicJSON() : this.reportedBy,
       assignedTo: this.assignedTo && typeof this.assignedTo.toPublicJSON === 'function' ? this.assignedTo.toPublicJSON() : this.assignedTo,
+      patient: this.patient && typeof this.patient.toPublicJSON === 'function' ? this.patient.toPublicJSON() : this.patient,
       equipment: this.equipment,
       resolutionTime: this.getResolutionTime(),
       isOverdue: this.isOverdue(),
@@ -91,6 +94,12 @@ class Ticket extends Model {
     Ticket.belongsTo(models.User, {
       foreignKey: 'assigned_to_id',
       as: 'assignedTo',
+      allowNull: true
+    });
+
+    Ticket.belongsTo(models.Patient, {
+      foreignKey: 'patient_id',
+      as: 'patient',
       allowNull: true
     });
 
@@ -168,6 +177,14 @@ Ticket.init({
       key: 'id'
     }
   },
+  patient_id: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    references: {
+      model: 'patients',
+      key: 'id'
+    }
+  },
   equipment_id: {
     type: DataTypes.UUID,
     allowNull: true,
@@ -182,6 +199,10 @@ Ticket.init({
   },
   solution: {
     type: DataTypes.TEXT,
+    allowNull: true
+  },
+  scheduled_for: {
+    type: DataTypes.DATE,
     allowNull: true
   },
   parts: {

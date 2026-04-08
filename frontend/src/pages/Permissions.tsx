@@ -231,7 +231,18 @@ const PermissionsPage: React.FC = () => {
       reports: { label: 'Reportes', class: styles.moduleReports },
       profile: { label: 'Perfil', class: styles.moduleProfile },
       permissions: { label: 'Permisos', class: styles.modulePermissions },
-      supplies: { label: 'Insumos', class: styles.moduleSupplies }
+      supplies: { label: 'Insumos', class: styles.moduleSupplies },
+      doctores: { label: 'Doctores', class: styles.moduleUsers },
+      'historial-clinico': { label: 'Historial Clinico', class: styles.moduleReports },
+      'consentimiento-informado': { label: 'Consetimiento Informado', class: styles.modulePermissions },
+      justificantes: { label: 'Justificante', class: styles.moduleTickets },
+      tratamientos: { label: 'Tratamientos', class: styles.moduleEquipment },
+      'historial-odontograma': { label: 'Historial Odontograma', class: styles.moduleReports },
+      'agenda-citas': { label: 'Agenda de Citas', class: styles.moduleTickets },
+      'centros-medicos': { label: 'Centro Medicos', class: styles.moduleUsers },
+      'reportes-financieros': { label: 'Reportes Financieros', class: styles.moduleReports },
+      'pacientes-adeudos': { label: 'Pacientes con Adeudos', class: styles.moduleReports },
+      'recetas-medicas': { label: 'Recetas Medicas', class: styles.modulePermissions }
     };
     
     const config = moduleConfig[module] || { label: module, class: '' };
@@ -261,7 +272,18 @@ const PermissionsPage: React.FC = () => {
       reports: 'Reportes',
       profile: 'Perfil',
       permissions: 'Permisos',
-      supplies: 'Insumos'
+      supplies: 'Insumos',
+      doctores: 'Doctores',
+      'historial-clinico': 'Historial Clinico',
+      'consentimiento-informado': 'Consetimiento Informado',
+      justificantes: 'Justificante',
+      tratamientos: 'Tratamientos',
+      'historial-odontograma': 'Historial Odontograma',
+      'agenda-citas': 'Agenda de Citas',
+      'centros-medicos': 'Centro Medicos',
+      'reportes-financieros': 'Reportes Financieros',
+      'pacientes-adeudos': 'Pacientes con Adeudos',
+      'recetas-medicas': 'Recetas Medicas'
     };
     return labels[module] || module;
   };
@@ -462,6 +484,17 @@ const PermissionsPage: React.FC = () => {
                     <option value="reports">Reportes</option>
                     <option value="permissions">Permisos</option>
                     <option value="supplies">Insumos</option>
+                    <option value="doctores">Doctores</option>
+                    <option value="historial-clinico">Historial Clinico</option>
+                    <option value="consentimiento-informado">Consetimiento Informado</option>
+                    <option value="justificantes">Justificante</option>
+                    <option value="tratamientos">Tratamientos</option>
+                    <option value="historial-odontograma">Historial Odontograma</option>
+                    <option value="agenda-citas">Agenda de Citas</option>
+                    <option value="centros-medicos">Centro Medicos</option>
+                    <option value="reportes-financieros">Reportes Financieros</option>
+                    <option value="pacientes-adeudos">Pacientes con Adeudos</option>
+                    <option value="recetas-medicas">Recetas Medicas</option>
                   </select>
                </div>
              </div>

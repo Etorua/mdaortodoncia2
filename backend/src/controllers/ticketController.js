@@ -1,4 +1,4 @@
-import { Ticket, User, Equipment, TicketComment, sequelize, InventoryMovement, DeletedTicket, Department } from '../models/index.js';
+import { Ticket, User, Equipment, TicketComment, sequelize, InventoryMovement, DeletedTicket, Department, Patient } from '../models/index.js';
 import Insumo from '../models/Insumo.js';
 import { Op } from 'sequelize';
 
@@ -157,6 +157,9 @@ const ticketController = {
           { '$assignedTo.nombre_completo$': { [Op.iLike]: `%${search}%` } },
           { '$assignedTo.usuario$': { [Op.iLike]: `%${search}%` } },
           { '$assignedTo.correo$': { [Op.iLike]: `%${search}%` } },
+          { '$patient.nombre_completo$': { [Op.iLike]: `%${search}%` } },
+          { '$patient.correo$': { [Op.iLike]: `%${search}%` } },
+          { '$patient.telefono$': { [Op.iLike]: `%${search}%` } },
           // Equipment
           { '$equipment.name$': { [Op.iLike]: `%${search}%` } },
           { '$equipment.serial_number$': { [Op.iLike]: `%${search}%` } },
@@ -194,6 +197,11 @@ const ticketController = {
             attributes: ['id', 'nombre_completo', 'correo']
           },
           {
+            model: Patient,
+            as: 'patient',
+            attributes: ['id', 'nombre_completo', 'correo', 'telefono']
+          },
+          {
             model: Equipment,
             as: 'equipment',
             attributes: ['id', 'name', 'serial_number', 'inventory_number']
@@ -229,6 +237,7 @@ const ticketController = {
           include: [{ model: Department, as: 'department', attributes: ['display_name'] }]
         },
         { model: User, as: 'assignedTo', attributes: ['id', 'nombre_completo', 'correo'] },
+        { model: Patient, as: 'patient', attributes: ['id', 'nombre_completo', 'correo', 'telefono'] },
         { model: Equipment, as: 'equipment', attributes: ['id', 'name', 'serial_number', 'inventory_number'] }
       ]
     });
@@ -268,7 +277,9 @@ const ticketController = {
         timeSpent,
         partsUsed,
         insumosUsados, // Nuevo campo alternativo: [{ insumoId, cantidad }]
-        reportedById // Nuevo campo: ID del usuario que reporta (solo admin)
+        reportedById, // Nuevo campo: ID del usuario que reporta (solo admin)
+        patientId,
+        scheduledFor
       } = ctx.request.body;
 
         // Normalización helper: quitar acentos, pasar a minúsculas y convertir espacios a guiones bajos
@@ -417,9 +428,11 @@ const ticketController = {
           equipment_id: equipmentId || null,
           assigned_to_id: assignedToId || null,
           reported_by_id: finalReportedById,
+          patient_id: patientId || null,
           status: 'nuevo',
           diagnosis,
           solution,
+          scheduled_for: scheduledFor || null,
           actual_hours: timeSpent,
           parts: safeParts || [],
           attachments: safeAttachments,
@@ -452,6 +465,11 @@ const ticketController = {
             model: User, 
             as: 'assignedTo', 
             attributes: ['id', 'nombre_completo', 'correo'] 
+          },
+          {
+            model: Patient,
+            as: 'patient',
+            attributes: ['id', 'nombre_completo', 'correo', 'telefono']
           },
           { 
             model: Equipment, 
@@ -500,7 +518,9 @@ const ticketController = {
         attachments,
         tags,
         reportedById,
-        notes
+        notes,
+        patientId,
+        scheduledFor
       } = ctx.request.body;
 
       const ticket = await Ticket.findByPk(id);
@@ -542,6 +562,9 @@ const ticketController = {
         updates.reported_by_id = reportedById;
       }
 
+      if (patientId !== undefined) updates.patient_id = patientId || null;
+      if (scheduledFor !== undefined) updates.scheduled_for = scheduledFor || null;
+
       if (partsUsed !== undefined) {
         updates.parts = partsUsed;
       }
@@ -575,6 +598,7 @@ const ticketController = {
             include: [{ model: Department, as: 'department', attributes: ['display_name'] }]
           },
           { model: User, as: 'assignedTo', attributes: ['id', 'nombre_completo', 'correo'] },
+          { model: Patient, as: 'patient', attributes: ['id', 'nombre_completo', 'correo', 'telefono'] },
           { model: Equipment, as: 'equipment', attributes: ['id', 'name', 'serial_number'] }
         ]
       });
@@ -662,6 +686,135 @@ const ticketController = {
       console.error('Error deleting ticket:', error);
       ctx.status = 500;
       ctx.body = { success: false, message: 'Error al eliminar ticket' };
+    }
+  },
+
+  async getPatientAppointments(ctx) {
+    try {
+      const { email = '', phone = '' } = ctx.query;
+
+      if (!email || !phone) {
+        ctx.status = 400;
+        ctx.body = { success: false, message: 'Correo y teléfono son requeridos' };
+        return;
+      }
+
+      const patient = await Patient.findOne({
+        where: {
+          correo: { [Op.iLike]: email.trim() },
+          telefono: { [Op.iLike]: phone.trim() }
+        }
+      });
+
+      if (!patient) {
+        ctx.body = { success: true, data: [] };
+        return;
+      }
+
+      const appointments = await Ticket.findAll({
+        where: { patient_id: patient.id },
+        include: [
+          { model: Patient, as: 'patient', attributes: ['id', 'nombre_completo', 'correo', 'telefono'] },
+          { model: User, as: 'assignedTo', attributes: ['id', 'nombre_completo', 'correo'] }
+        ],
+        order: [['scheduled_for', 'ASC'], ['createdAt', 'DESC']]
+      });
+
+      ctx.body = {
+        success: true,
+        data: appointments.map(appointment => appointment.toPublicJSON())
+      };
+    } catch (error) {
+      console.error('Error getting patient appointments:', error);
+      ctx.status = 500;
+      ctx.body = { success: false, message: 'Error al consultar citas' };
+    }
+  },
+
+  async createPatientAppointment(ctx) {
+    try {
+      const {
+        fullName,
+        email,
+        phone,
+        description,
+        scheduledFor,
+        title
+      } = ctx.request.body;
+
+      if (!fullName || !email || !phone || !scheduledFor) {
+        ctx.status = 400;
+        ctx.body = { success: false, message: 'Nombre, correo, teléfono y fecha son requeridos' };
+        return;
+      }
+
+      let patient = await Patient.findOne({
+        where: {
+          [Op.or]: [
+            { correo: email.trim().toLowerCase() },
+            { telefono: phone.trim() }
+          ]
+        }
+      });
+
+      if (!patient) {
+        patient = await Patient.create({
+          nombre_completo: fullName.trim(),
+          correo: email.trim().toLowerCase(),
+          telefono: phone.trim(),
+          activo: true
+        });
+      } else {
+        await patient.update({
+          nombre_completo: fullName.trim(),
+          correo: email.trim().toLowerCase(),
+          telefono: phone.trim()
+        });
+      }
+
+      const adminUser = await User.findOne({
+        where: {
+          rol: { [Op.iLike]: 'admin' },
+          activo: true
+        },
+        order: [['createdAt', 'ASC']]
+      });
+
+      if (!adminUser) {
+        ctx.status = 500;
+        ctx.body = { success: false, message: 'No hay usuario administrador disponible para registrar la cita' };
+        return;
+      }
+
+      const appointment = await Ticket.create({
+        ticket_number: await Ticket.generateTicketNumber(),
+        title: title || 'Consulta dental',
+        description: description || 'Solicitud de cita desde portal de pacientes',
+        priority: 'media',
+        service_type: 'preventivo',
+        reported_by_id: adminUser.id,
+        patient_id: patient.id,
+        scheduled_for: scheduledFor,
+        status: 'pendiente'
+      });
+
+      const appointmentWithRelations = await Ticket.findByPk(appointment.id, {
+        include: [
+          { model: Patient, as: 'patient', attributes: ['id', 'nombre_completo', 'correo', 'telefono'] },
+          { model: User, as: 'assignedTo', attributes: ['id', 'nombre_completo', 'correo'] }
+        ]
+      });
+
+      ctx.status = 201;
+      ctx.body = {
+        success: true,
+        message: 'Cita solicitada exitosamente',
+        data: appointmentWithRelations.toPublicJSON()
+      };
+    } catch (error) {
+      console.error('Error creating patient appointment:', error);
+      ctx.status = 500;
+      ctx.body = { success: false, message: 'Error al solicitar la cita' };
     }
   }
 };

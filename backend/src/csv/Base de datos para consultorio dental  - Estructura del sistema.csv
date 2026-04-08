@@ -1,0 +1,15 @@
+Modulos (Sidebar),Nuevo sistema,Usuarios del sistema,Doctores,Pacientes,Historial Clinico,Consetimiento Informado,Justificante,Tratamientos,Historial Odontograma,Agenda de Citas,Inventario,Centro Medicos,Permisos,Reportes Financieros,Pacientes con Adeudos,Recetas Medicas
+A,Doctores,Administrador,ID_Dentista,ID_Paciente,Nombre del Paciente,Fecha,Nombre de consultorio dental,Tratamiento,,Hora,Categoría,Direccion del Consultorio dental,TODOS,Fecha,Nombre del Paciente,Nombre del Paciente
+B,Pacientes,Doctor,Nombre,Nombres,Edad,Nombre del Paciente,Logotipo,Descripción ,,Paciente,Artículo,,TODOS,Concepto,Tratamiento Total,Tratamiento
+C,Historial Clinico,Recepcionista,Especialidad,Paterno,Sexo,Procedimiento,Nombre del doctor,Riesgos Específicos ,,Teléfono,Marca,,"B,H,J",Categoría,Pagado a la fecha,Recomendacion de reposo
+D,Consetimiento Informado,Paciente,Cédula_Prof,Materno,Nacionalidad,Odontólogo,Cedula Profesional,Alternativas ,,Tratamiento,Presentación,,"H,C,E,",Ingreso (+),Saldo Pendiente,Medicamentos
+E,Justificante,,Usuario_Sistema,Fecha_Nacimiento,Escolaridad,Riesgos Explicados,Hora de atencion,,,Doctor/Especialista,Stock Actual,,,Egreso (-),Último Pago,Horario de toma de medicamentos
+F,Tratamientos,,,Teléfono,Estado civil,Tratamiento,Motivo,,,Estado,Stock Mínimo,,,Método de Pago,,
+G,Historial Odontograma,,,Email,Domicilio,Descripción,Recomendacion de reposo,,,Observaciones,Estado,,,,,
+H,Agenda de Citas,,,Alergias,Lugar de Origen,Riesgos Comunes,Fecha reincorporacion,,,Paciente,Ubicación,,,,,
+I,Inventario,,,,Habitos de higiene,Alternativas,Lugar de expedicion,,,Última Cita,,,,,,
+J,Centro Medicos,,,,Alcoholismo,¿Firmó?,Firma,,,Motivo,,,,,,
+K,Permisos,,,,Tabaquismo,Link al PDF/Foto,,,,Próxima Cita,,,,,,
+L,Reportes Financieros,,,,,,,,,Notas,,,,,,
+M,Pacientes con Adeudos,,,,,,,,,,,,,,,
+N,Recetas Medicas,,,,,,,,,,,,,,,

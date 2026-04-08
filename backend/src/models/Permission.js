@@ -36,7 +36,18 @@ Permission.init({
       'profile', 
       'permissions',
       'supplies',
-      'departments'
+      'departments',
+      'doctores',
+      'historial-clinico',
+      'consentimiento-informado',
+      'justificantes',
+      'tratamientos',
+      'historial-odontograma',
+      'agenda-citas',
+      'centros-medicos',
+      'reportes-financieros',
+      'pacientes-adeudos',
+      'recetas-medicas'
     ),
     allowNull: false
   },

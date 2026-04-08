@@ -13,12 +13,19 @@ import {
   Shield,
   Settings,
   LogOut,
-  ListTodo
+  ListTodo,
+  FileText,
+  CalendarDays,
+  ClipboardList,
+  Stethoscope,
+  Receipt,
+  Wallet
 } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import { PermissionModule } from '@/types';
 import SettingsDropdown from './SettingsDropdown';
 import styles from './Sidebar.module.css';
+import { clinicalModuleDefinitions } from '@/config/clinicalModules';
 
 interface MenuItem {
   path: string;
@@ -52,7 +59,7 @@ const menuItems: MenuItem[] = [
   },
   {
     path: '/departamentos',
-    label: 'Departamentos',
+    label: 'Servicios',
     icon: Building,
     roles: ['admin'],
     module: 'users'
@@ -66,7 +73,7 @@ const menuItems: MenuItem[] = [
   },
   {
     path: '/tickets',
-    label: 'Tickets',
+    label: 'Consultas',
     icon: Ticket,
     roles: ['admin', 'tecnico', 'technician', 'usuario', 'user', 'inventario'],
     module: 'tickets'
@@ -101,6 +108,28 @@ const menuItems: MenuItem[] = [
   }
 ];
 
+  const clinicalModuleIcons: Record<string, React.ElementType> = {
+    'doctores': Stethoscope,
+    'historial-clinico': ClipboardList,
+    'consentimiento-informado': FileText,
+    'justificantes': Receipt,
+    'tratamientos': FileText,
+    'historial-odontograma': ClipboardList,
+    'agenda-citas': CalendarDays,
+    'centros-medicos': Building,
+    'reportes-financieros': Wallet,
+    'pacientes-adeudos': Wallet,
+    'recetas-medicas': FileText
+  };
+
+  const clinicalMenuItems: MenuItem[] = clinicalModuleDefinitions.map(definition => ({
+    path: definition.path,
+    label: definition.label,
+    icon: clinicalModuleIcons[definition.key] || FileText,
+    roles: ['admin'],
+    module: definition.permissionModule
+  }));
+
 const Sidebar: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -119,7 +148,13 @@ const Sidebar: React.FC = () => {
   };
 
   // Filtrar elementos del menú por permisos del usuario
-  const filteredMenuItems = menuItems.filter(item => {
+  const allMenuItems = [
+    ...menuItems.slice(0, 3),
+    ...clinicalMenuItems,
+    ...menuItems.slice(3)
+  ];
+
+  const filteredMenuItems = allMenuItems.filter(item => {
     if (!user) return false;
     
     // Verificar si tiene acceso al módulo mediante permisos

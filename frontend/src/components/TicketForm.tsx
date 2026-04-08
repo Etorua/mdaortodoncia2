@@ -1,13 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { User, Equipment } from '@/types';
+import { User, Equipment, Patient } from '@/types';
 import { useAuth } from '@/hooks/useAuth.tsx';
 import SearchableSelect from './SearchableSelect';
+
+interface ServiceCatalogItem {
+  id: string;
+  display_name: string;
+  is_active: boolean;
+}
 
 export interface TicketFormProps {
   onSubmit: (data: any) => void;
   loading?: boolean;
   initialData?: any;
   users?: User[];
+  patients?: Patient[];
+  services?: ServiceCatalogItem[];
   equipment?: Equipment[];
   onCancel?: () => void;
   isEditMode?: boolean;
@@ -25,6 +33,8 @@ const TicketForm: React.FC<TicketFormProps> = ({
   loading = false, 
   initialData = {}, 
   users = [], 
+  patients = [],
+  services = [],
   equipment = [],
   onCancel,
   isEditMode = false
@@ -73,6 +83,8 @@ const TicketForm: React.FC<TicketFormProps> = ({
   const [equipmentId, setEquipmentId] = useState(initialData.equipmentId || '');
   const [assignedToId, setAssignedToId] = useState(initialData.assignedToId || '');
   const [reportedById, setReportedById] = useState(initialData.reportedById || user?.id || '');
+  const [patientId, setPatientId] = useState(initialData.patientId || '');
+  const [scheduledFor, setScheduledFor] = useState(initialData.scheduledFor ? String(initialData.scheduledFor).slice(0, 16) : '');
   const [diagnosis, setDiagnosis] = useState(initialData.diagnosis || '');
   const [solution, setSolution] = useState(initialData.solution || '');
   const [notes, setNotes] = useState(initialData.notes || '');
@@ -90,16 +102,10 @@ const TicketForm: React.FC<TicketFormProps> = ({
     }
     return [];
   });
-  const [commonServices, setCommonServices] = useState<Array<{ nombre: string; tipo: string }>>([]);
   const [insumos, setInsumos] = useState<Array<{ nombre: string; cantidad: number; unidad: string }>>([]);
   const [activePartIndex, setActivePartIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch('/catalogo_servicios.json')
-      .then(res => res.json())
-      .then(data => setCommonServices(data))
-      .catch(err => console.error('Error loading services catalog:', err));
-
     // Cargar insumos para el autocompletado
     const token = sessionStorage.getItem('authToken');
     fetch('/api/insumos', {
@@ -128,6 +134,8 @@ const TicketForm: React.FC<TicketFormProps> = ({
       setEquipmentId(initialData.equipmentId || '');
       setAssignedToId(initialData.assignedToId || '');
       setReportedById(initialData.reportedById || user?.id || '');
+      setPatientId(initialData.patientId || '');
+      setScheduledFor(initialData.scheduledFor ? String(initialData.scheduledFor).slice(0, 16) : '');
       setDiagnosis(initialData.diagnosis || '');
       setSolution(initialData.solution || '');
       setNotes(initialData.notes || '');
@@ -170,22 +178,10 @@ const TicketForm: React.FC<TicketFormProps> = ({
     setParts(parts.map((p, i) => i === idx ? { ...p, [field]: value } : p));
   }
 
-  function handleCommonServiceChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const selectedName = e.target.value;
-    // Permitir deseleccionar si es necesario
-    if (!selectedName) {
-      if (!isTechnician) {
-        setTitle('');
-        setServiceType('correctivo');
-      }
-      return;
-    }
-    
-    const service = commonServices.find(s => s.nombre === selectedName);
-    if (service) {
-      setTitle(service.nombre);
-      setServiceType(service.tipo.toLowerCase());
-    }
+  function handleCatalogServiceChange(serviceId: string) {
+    const service = services.find(item => item.id === serviceId);
+    if (!service) return;
+    setTitle(service.display_name);
   }
 
   const selectedEquipment = availableEquipment.find(e => e.id === equipmentId);
@@ -285,6 +281,8 @@ const TicketForm: React.FC<TicketFormProps> = ({
       priority,
       status: finalStatus,
       serviceType,
+      patientId,
+      scheduledFor: scheduledFor || undefined,
       equipmentId, 
       assignedToId: finalAssignedToId,
       reportedById,
@@ -297,12 +295,13 @@ const TicketForm: React.FC<TicketFormProps> = ({
   }
 
   const selectedUser = users.find(u => u.id === reportedById) || (initialData.reportedBy) || user;
+  const selectedPatient = patients.find(p => p.id === patientId) || initialData.patient;
 
   return (
     <form onSubmit={handleSubmit} className="ticket-form">
       {/* Sección 1: Datos de usuario */}
       <div className="form-section">
-        <h3 className="section-title">Datos de Usuario</h3>
+        <h3 className="section-title">Datos del Solicitante</h3>
         {user?.role === 'admin' ? (
           <div className="form-group">
             <label className="form-label">Usuario Reportante (Admin)</label>
@@ -344,18 +343,58 @@ const TicketForm: React.FC<TicketFormProps> = ({
         )}
       </div>
 
+      <div className="form-section">
+        <h3 className="section-title">Paciente y Cita</h3>
+        <div className="form-row">
+          <div className="form-group">
+            <label className="form-label">Paciente</label>
+            <SearchableSelect
+              options={patients.map(patient => ({
+                value: patient.id,
+                label: patient.fullName,
+                subLabel: patient.email || patient.phone || 'Sin contacto'
+              }))}
+              value={patientId}
+              onChange={(val) => setPatientId(val)}
+              placeholder="Seleccionar paciente"
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Fecha y hora programada</label>
+            <input
+              type="datetime-local"
+              className="form-input"
+              value={scheduledFor}
+              onChange={e => setScheduledFor(e.target.value)}
+              disabled={loading || isClosed}
+            />
+          </div>
+        </div>
+        {selectedPatient && (
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Correo del paciente</label>
+              <input className="form-input" value={selectedPatient.email || ''} disabled readOnly />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Teléfono del paciente</label>
+              <input className="form-input" value={selectedPatient.phone || ''} disabled readOnly />
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Sección 2: Información del equipo */}
       <div className="form-section">
-        <h3 className="section-title">Información del Equipo</h3>
+        <h3 className="section-title">Recurso Clínico o Equipo</h3>
         <div className="form-group">
-          <label className="form-label form-label-required">Seleccionar Equipo</label>
+          <label className="form-label">Seleccionar Equipo</label>
           {!isTechnician && availableEquipment.length === 0 && (
              <div style={{ fontSize: '0.85rem', color: '#b91c1c', marginBottom: '0.5rem', padding: '0.75rem', backgroundColor: '#fef2f2', borderRadius: '0.375rem', border: '1px solid #fecaca' }}>
                {equipment.length === 0 ? 'Cargando equipos...' : 'No tiene equipos asignados. Por favor contacte al administrador si cree que esto es un error.'}
              </div>
           )}
           <SearchableSelect
-            required
             placeholder="Seleccionar Equipo"
             value={equipmentId}
             onChange={(val) => setEquipmentId(val)}
@@ -405,14 +444,14 @@ const TicketForm: React.FC<TicketFormProps> = ({
 
       {/* Sección 3: Descripción Detallada */}
       <div className="form-section">
-        <h3 className="section-title">Descripción Detallada</h3>
+        <h3 className="section-title">Motivo de la Consulta</h3>
         <div className="form-group">
           <textarea 
             required
             minLength={3}
             rows={4}
             className="form-input"
-            placeholder="Describa el problema detalladamente..." 
+            placeholder="Describa el motivo de la consulta o cita..." 
             value={description} 
             onChange={e => setDescription(e.target.value)} 
             style={{ resize: 'vertical' }}
@@ -424,27 +463,25 @@ const TicketForm: React.FC<TicketFormProps> = ({
       {/* Sección 4: Catálogo de servicio */}
       {isTechnician && initialData.id && (
       <div className="form-section">
-        <h3 className="section-title">Catálogo de Servicio</h3>
-        {commonServices.length > 0 && (
+        <h3 className="section-title">Catálogo de Consulta</h3>
+        {services.filter(service => service.is_active).length > 0 && (
           <div className="form-group">
-            <label className="form-label">Servicios Comunes</label>
-            <select 
-              className="form-input" 
-              onChange={handleCommonServiceChange} 
-              value={commonServices.find(s => s.nombre === title)?.nombre || ""}
-              disabled={loading || isClosed}
-            >
-              <option value="">-- Seleccionar Servicio --</option>
-              {commonServices.map((s, idx) => (
-                <option key={idx} value={s.nombre}>
-                  {s.nombre} ({s.tipo})
-                </option>
-              ))}
-            </select>
+            <label className="form-label">Catálogo de Servicios</label>
+            <SearchableSelect
+              options={services
+                .filter(service => service.is_active)
+                .map(service => ({
+                  value: service.id,
+                  label: service.display_name
+                }))}
+              value={services.find(service => service.display_name === title)?.id || ''}
+              onChange={handleCatalogServiceChange}
+              placeholder="Seleccionar servicio"
+            />
           </div>
         )}
         <div className="form-group">
-          <label className="form-label form-label-required">Título del Ticket</label>
+          <label className="form-label form-label-required">Título de la Consulta</label>
           <input 
             required
             minLength={5}
@@ -461,7 +498,7 @@ const TicketForm: React.FC<TicketFormProps> = ({
       {/* Sección 5: Prioridad, Estado, Tipo de Servicio */}
       {isTechnician && initialData.id && (
       <div className="form-section">
-        <h3 className="section-title">Clasificación del Servicio</h3>
+        <h3 className="section-title">Clasificación de la Consulta</h3>
         <div className="form-row" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
           <div className="form-group">
             <label className="form-label">Prioridad</label>
@@ -495,7 +532,7 @@ const TicketForm: React.FC<TicketFormProps> = ({
           </div>
 
           <div className="form-group">
-            <label className="form-label">Tipo de Servicio</label>
+            <label className="form-label">Tipo de Consulta</label>
             <select 
               className="form-input" 
               value={serviceType} 
@@ -516,7 +553,7 @@ const TicketForm: React.FC<TicketFormProps> = ({
         <>
           {/* Sección 6: Diagnóstico Técnico */}
           <div className="form-section">
-            <h3 className="section-title">Diagnóstico Técnico</h3>
+            <h3 className="section-title">Diagnóstico Clínico</h3>
             <div className="form-group">
               <textarea 
                 rows={3}

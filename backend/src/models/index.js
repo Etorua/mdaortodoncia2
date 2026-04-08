@@ -16,6 +16,7 @@ import ActivityParticipant from './ActivityParticipant.js';
 import ActivityComment from './ActivityComment.js';
 import permissionService from '../services/permissionService.js';
 import Patient from './Patient.js';
+import ClinicalModuleRecord from './ClinicalModuleRecord.js';
 
 // Objeto que contiene todos los modelos
 const models = {
@@ -34,7 +35,8 @@ const models = {
   Activity,
   ActivityParticipant,
   ActivityComment,
-  Patient
+  Patient,
+  ClinicalModuleRecord
 };
 
 // Configurar asociaciones
@@ -78,7 +80,8 @@ export {
   Activity,
   ActivityParticipant,
   ActivityComment,
-  Patient
+  Patient,
+  ClinicalModuleRecord
 };
 
 export default models;

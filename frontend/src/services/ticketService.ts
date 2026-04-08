@@ -24,6 +24,9 @@ export const ticketService = {
     solution?: string;
     partsUsed?: string;
     timeSpent?: number;
+    reportedById?: string;
+    patientId?: string;
+    scheduledFor?: string;
   }): Promise<Ticket> {
     // Mapear campos del frontend a los del backend
     const payload: any = {
@@ -31,8 +34,11 @@ export const ticketService = {
       description: data.description,
       priority: data.priority,
       serviceType: data.serviceType,
+      patientId: data.patientId,
+      scheduledFor: data.scheduledFor,
       equipmentId: data.equipmentId,
       assignedToId: data.assignedToId,
+      reportedById: data.reportedById,
       diagnosis: data.diagnosis,
       solution: data.solution,
       partsUsed: data.partsUsed,
@@ -47,11 +53,16 @@ export const ticketService = {
     solution?: string;
     partsUsed?: string;
     timeSpent?: number;
+    reportedById?: string;
+    patientId?: string;
+    scheduledFor?: string;
   }>): Promise<Ticket> {
     // Mapear campos del frontend a los del backend
     const payload: any = {
       ...data,
       serviceType: data.serviceType,
+      patientId: data.patientId,
+      scheduledFor: data.scheduledFor,
       equipmentId: data.equipmentId,
       assignedToId: data.assignedToId,
       diagnosis: data.diagnosis,
@@ -78,5 +89,23 @@ export const ticketService = {
       responseType: 'blob'
     });
     return res.data;
+  },
+
+  async getPatientAppointments(email: string, phone: string): Promise<Ticket[]> {
+    const queryParams = new URLSearchParams({ email, phone });
+    const res = await apiClient.get<{ success: boolean; data: Ticket[] }>(`/tickets/public/appointments?${queryParams.toString()}`);
+    return res.data.data || [];
+  },
+
+  async createPatientAppointment(data: {
+    fullName: string;
+    email: string;
+    phone: string;
+    description?: string;
+    scheduledFor: string;
+    title?: string;
+  }): Promise<Ticket> {
+    const res = await apiClient.post<{ success: boolean; data: Ticket }>('/tickets/public/appointments', data);
+    return res.data.data;
   }
 };

@@ -3,6 +3,8 @@ import { apiClient } from './apiClient';
 export interface Department {
   id: string;
   display_name: string;
+  description?: string | null;
+  price?: number | string | null;
   is_active: boolean;
   created_at?: string;
   updated_at?: string;

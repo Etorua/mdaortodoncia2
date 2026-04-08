@@ -1,19 +1,23 @@
-import { db } from '../models/index.js';
+import { Patient } from '../models/index.js';
 import { Op } from 'sequelize';
 
-// Asegúrate de importar el modelo Patient si no está en index.js aún
-// Pero como Sequelize carga dinámicamente, estará disponible como db.Patient después de registrarlo
-const Patient = db.Patient;
+class PatientController {
+  constructor() {
+    this.getAllPatients = this.getAllPatients.bind(this);
+    this.getPatientById = this.getPatientById.bind(this);
+    this.createPatient = this.createPatient.bind(this);
+    this.updatePatient = this.updatePatient.bind(this);
+    this.deletePatient = this.deletePatient.bind(this);
+  }
 
-export const patientController = {
-  // Obtener todos los pacientes
-  getAll: async (req, res) => {
+  async getAllPatients(ctx) {
     try {
-      const { page = 1, limit = 10, search = '', isActive } = req.query;
-      const offset = (page - 1) * limit;
-
+      const { page = 1, limit = 10, search = '', isActive = '' } = ctx.query;
+      const parsedPage = parseInt(page, 10);
+      const parsedLimit = parseInt(limit, 10);
+      const offset = (parsedPage - 1) * parsedLimit;
       const where = {};
-      
+
       if (search) {
         where[Op.or] = [
           { nombre_completo: { [Op.iLike]: `%${search}%` } },
@@ -22,74 +26,89 @@ export const patientController = {
         ];
       }
 
-      if (isActive !== undefined) {
+      if (isActive !== '') {
         where.activo = isActive === 'true';
       }
 
       const { count, rows } = await Patient.findAndCountAll({
         where,
-        limit: parseInt(limit),
-        offset: parseInt(offset),
+        limit: parsedLimit,
+        offset,
         order: [['nombre_completo', 'ASC']]
       });
 
-      res.json({
+      ctx.status = 200;
+      ctx.body = {
         success: true,
-        data: rows,
+        data: rows.map(patient => patient.toPublicJSON()),
         pagination: {
           total: count,
-          page: parseInt(page),
-          totalPages: Math.ceil(count / limit)
+          page: parsedPage,
+          limit: parsedLimit,
+          totalPages: Math.ceil(count / parsedLimit)
         }
-      });
+      };
     } catch (error) {
       console.error('Error al obtener pacientes:', error);
-      res.status(500).json({
+      ctx.status = 500;
+      ctx.body = {
         success: false,
         message: 'Error al obtener la lista de pacientes'
-      });
+      };
     }
-  },
+  }
 
-  // Obtener paciente por ID
-  getById: async (req, res) => {
+  async getPatientById(ctx) {
     try {
-      const { id } = req.params;
+      const { id } = ctx.params;
       const patient = await Patient.findByPk(id);
 
       if (!patient) {
-        return res.status(404).json({
+        ctx.status = 404;
+        ctx.body = {
           success: false,
           message: 'Paciente no encontrado'
-        });
+        };
+        return;
       }
 
-      res.json({
+      ctx.status = 200;
+      ctx.body = {
         success: true,
-        data: patient
-      });
+        data: patient.toPublicJSON()
+      };
     } catch (error) {
       console.error('Error al obtener paciente:', error);
-      res.status(500).json({
+      ctx.status = 500;
+      ctx.body = {
         success: false,
         message: 'Error al obtener el paciente'
-      });
+      };
     }
-  },
+  }
 
-  // Crear paciente
-  create: async (req, res) => {
+  async createPatient(ctx) {
     try {
-      const { nombre_completo, correo, telefono, direccion, fecha_nacimiento, genero, antecedentes } = req.body;
+      const { nombre_completo, correo, telefono, direccion, fecha_nacimiento, genero, antecedentes } = ctx.request.body;
 
-      // Validar correo único si se proporciona
+      if (!nombre_completo) {
+        ctx.status = 400;
+        ctx.body = {
+          success: false,
+          message: 'El nombre completo es obligatorio'
+        };
+        return;
+      }
+
       if (correo) {
         const existingPatient = await Patient.findOne({ where: { correo } });
         if (existingPatient) {
-          return res.status(400).json({
+          ctx.status = 409;
+          ctx.body = {
             success: false,
             message: 'El correo electrónico ya está registrado'
-          });
+          };
+          return;
         }
       }
 
@@ -104,42 +123,46 @@ export const patientController = {
         activo: true
       });
 
-      res.status(201).json({
+      ctx.status = 201;
+      ctx.body = {
         success: true,
         message: 'Paciente registrado exitosamente',
-        data: newPatient
-      });
+        data: newPatient.toPublicJSON()
+      };
     } catch (error) {
       console.error('Error al crear paciente:', error);
-      res.status(500).json({
+      ctx.status = 500;
+      ctx.body = {
         success: false,
         message: 'Error al registrar el paciente'
-      });
+      };
     }
-  },
+  }
 
-  // Actualizar paciente
-  update: async (req, res) => {
+  async updatePatient(ctx) {
     try {
-      const { id } = req.params;
-      const { nombre_completo, correo, telefono, direccion, fecha_nacimiento, genero, antecedentes, activo } = req.body;
-
+      const { id } = ctx.params;
+      const { nombre_completo, correo, telefono, direccion, fecha_nacimiento, genero, antecedentes, activo } = ctx.request.body;
       const patient = await Patient.findByPk(id);
+
       if (!patient) {
-        return res.status(404).json({
+        ctx.status = 404;
+        ctx.body = {
           success: false,
           message: 'Paciente no encontrado'
-        });
+        };
+        return;
       }
 
-      // Validar correo único si cambia
       if (correo && correo !== patient.correo) {
         const existingPatient = await Patient.findOne({ where: { correo } });
         if (existingPatient) {
-          return res.status(400).json({
+          ctx.status = 409;
+          ctx.body = {
             success: false,
             message: 'El correo electrónico ya está ocupado por otro paciente'
-          });
+          };
+          return;
         }
       }
 
@@ -151,51 +174,55 @@ export const patientController = {
         fecha_nacimiento,
         genero,
         antecedentes,
-        activo
+        activo: activo === undefined ? patient.activo : activo
       });
 
-      res.json({
+      ctx.status = 200;
+      ctx.body = {
         success: true,
         message: 'Paciente actualizado exitosamente',
-        data: patient
-      });
+        data: patient.toPublicJSON()
+      };
     } catch (error) {
       console.error('Error al actualizar paciente:', error);
-      res.status(500).json({
+      ctx.status = 500;
+      ctx.body = {
         success: false,
         message: 'Error al actualizar el paciente'
-      });
+      };
     }
-  },
+  }
 
-  // Eliminar paciente (soft delete o lógico)
-  delete: async (req, res) => {
+  async deletePatient(ctx) {
     try {
-      const { id } = req.params;
+      const { id } = ctx.params;
       const patient = await Patient.findByPk(id);
 
       if (!patient) {
-        return res.status(404).json({
+        ctx.status = 404;
+        ctx.body = {
           success: false,
           message: 'Paciente no encontrado'
-        });
+        };
+        return;
       }
 
-      // Se puede optar por borrado lógico (isActive = false) o físico
-      // Aquí haremos borrado físico para simplificar, o lógico si prefieres
-      // Vamos con lógico:
       await patient.update({ activo: false });
 
-      res.json({
+      ctx.status = 200;
+      ctx.body = {
         success: true,
         message: 'Paciente desactivado exitosamente'
-      });
+      };
     } catch (error) {
       console.error('Error al eliminar paciente:', error);
-      res.status(500).json({
+      ctx.status = 500;
+      ctx.body = {
         success: false,
         message: 'Error al eliminar el paciente'
-      });
+      };
     }
   }
-};
+}
+
+export default new PatientController();

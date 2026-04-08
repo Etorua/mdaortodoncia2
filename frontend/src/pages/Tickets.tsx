@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
-import { Ticket, Equipment, User } from '@/types';
+import { Ticket, Equipment, User, Patient } from '@/types';
 import { ticketService } from '../services/ticketService';
 import { equipmentService } from '../services/equipmentService';
 import { userService } from '../services/userService';
+import { patientService } from '../services/patientService';
+import { departmentService, Department } from '../services/departmentService';
 import styles from './Tickets.module.css';
 import Table from '../components/Table';
 import Modal from '../components/Modal';
@@ -37,6 +39,8 @@ const TicketsPage: React.FC = () => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [services, setServices] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,7 +50,7 @@ const TicketsPage: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalTickets, setTotalTickets] = useState(0);
   const [filters, setFilters] = useState({ status: '', priority: '', serviceType: '', search: '' });
-  const [visibleColumns, setVisibleColumns] = useState<string[]>(['ticketNumber', 'title', 'priority', 'status', 'serviceType', 'assignedTo', 'createdAt', 'actions']);
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(['ticketNumber', 'title', 'patient', 'scheduledFor', 'status', 'serviceType', 'assignedTo', 'createdAt', 'actions']);
   const [showColumnSelector, setShowColumnSelector] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -69,27 +73,36 @@ const TicketsPage: React.FC = () => {
           priority: filters.priority,
           serviceType: filters.serviceType
         }),
-        equipmentService.getEquipment({ limit: 1000 })
+        equipmentService.getEquipment({ limit: 1000 }),
+        departmentService.getAll()
       ];
 
       // Only fetch users if technician or admin to avoid 403 errors
       const canViewUsers = user?.role === 'admin' || user?.role === 'tecnico';
+      const canViewPatients = user?.role === 'admin' || user?.role === 'tecnico' || user?.role === 'technician';
       if (canViewUsers) {
         promises.push(userService.getUsers({ limit: 1000, isActive: 'true' }));
+      }
+      if (canViewPatients) {
+        promises.push(patientService.getPatients({ limit: 1000, isActive: 'true' }));
       }
 
       const results = await Promise.all(promises);
       
       const ticketsResponse = results[0];
       const equipmentResponse = results[1];
-      const usersResponse = canViewUsers ? results[2] : { data: [] };
+      const servicesResponse = results[2];
+      const usersResponse = canViewUsers ? results[3] : { data: [] };
+      const patientsResponse = canViewPatients ? results[canViewUsers ? 4 : 3] : { data: [] };
       
       setTickets(ticketsResponse.data || []);
       setTotalPages(ticketsResponse.pagination?.totalPages || 1);
       setTotalTickets(ticketsResponse.pagination?.total || 0);
 
       setEquipment(equipmentResponse.data || []);
+      setServices(servicesResponse.data || []);
       setUsers(usersResponse.data || []);
+      setPatients(patientsResponse.data || []);
       setError(null);
     } catch (err) {
       setError('No se pudo cargar los datos. Por favor, intente de nuevo.');
@@ -129,6 +142,8 @@ const TicketsPage: React.FC = () => {
       priority: data.priority,
       status: data.status,
       serviceType: data.serviceType,
+      patientId: data.patientId || null,
+      scheduledFor: data.scheduledFor || null,
       equipmentId: data.equipmentId || null,
       assignedToId: (data.assignedToId && data.assignedToId !== '') ? data.assignedToId : null,
       reportedById: data.reportedById, // Include reportedById
@@ -142,15 +157,15 @@ const TicketsPage: React.FC = () => {
     try {
       if (isEditing && currentTicket) {
         await ticketService.updateTicket(currentTicket.id, backendPayload);
-        await showSuccess('Éxito', 'Ticket actualizado exitosamente.');
+        await showSuccess('Éxito', 'Consulta actualizada exitosamente.');
       } else {
         await ticketService.createTicket(backendPayload as any);
-        await showSuccess('Éxito', 'Ticket creado exitosamente.');
+        await showSuccess('Éxito', 'Consulta creada exitosamente.');
       }
       fetchData();
       handleCloseModals();
     } catch (err: any) {
-      const errorMessage = err.message || 'Ocurrió un error al guardar el ticket.';
+      const errorMessage = err.message || 'Ocurrió un error al guardar la consulta.';
       await showError('Error', errorMessage);
       console.error(err);
     }
@@ -170,8 +185,8 @@ const TicketsPage: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     const result = await Swal.fire({
-      title: '¿Eliminar ticket?',
-      text: 'Por favor, ingrese una justificación para eliminar este ticket.',
+      title: '¿Eliminar consulta?',
+      text: 'Por favor, ingrese una justificación para eliminar esta consulta.',
       input: 'textarea',
       inputPlaceholder: 'Escriba la justificación aquí...',
       showCancelButton: true,
@@ -189,25 +204,25 @@ const TicketsPage: React.FC = () => {
       try {
         await ticketService.deleteTicket(id, result.value);
         fetchData();
-        await showSuccess('Eliminado', 'Ticket eliminado correctamente.');
+        await showSuccess('Eliminado', 'Consulta eliminada correctamente.');
       } catch (err) {
-        setError('Error al eliminar el ticket.');
+        setError('Error al eliminar la consulta.');
         console.error(err);
       }
     }
   };
 
   const handleBulkDelete = async () => {
-    if (await showConfirm('¿Eliminar tickets?', `¿Estás seguro de eliminar ${selectedTicketIds.length} tickets?`)) {
+    if (await showConfirm('¿Eliminar consultas?', `¿Estás seguro de eliminar ${selectedTicketIds.length} consultas?`)) {
       try {
         setLoading(true);
         await Promise.all(selectedTicketIds.map(id => ticketService.deleteTicket(id.toString())));
         await fetchData();
         setSelectedTicketIds([]);
-        await showSuccess('Eliminados', 'Tickets eliminados correctamente.');
+        await showSuccess('Eliminados', 'Consultas eliminadas correctamente.');
       } catch (err) {
-        console.error('Error deleting tickets:', err);
-        setError('Error al eliminar algunos tickets. Por favor intente de nuevo.');
+        console.error('Error deleting appointments:', err);
+        setError('Error al eliminar algunas consultas. Por favor intente de nuevo.');
       } finally {
         setLoading(false);
       }
@@ -232,20 +247,22 @@ const TicketsPage: React.FC = () => {
       const dataToExport = allTickets.map(ticket => {
         const row: Record<string, any> = {};
         
-        if (visibleColumns.includes('ticketNumber')) row['Ticket'] = ticket.ticketNumber;
-        if (visibleColumns.includes('title')) row['Título'] = ticket.title;
+        if (visibleColumns.includes('ticketNumber')) row['Consulta'] = ticket.ticketNumber;
+        if (visibleColumns.includes('title')) row['Motivo'] = ticket.title;
+        if (visibleColumns.includes('patient')) row['Paciente'] = ticket.patient?.fullName || 'N/A';
+        if (visibleColumns.includes('scheduledFor')) row['Fecha Programada'] = ticket.scheduledFor ? new Date(ticket.scheduledFor).toLocaleString() : 'No programada';
         if (visibleColumns.includes('equipment')) row['Equipo'] = ticket.equipment ? ticket.equipment.name : 'N/A';
         if (visibleColumns.includes('status')) row['Estado'] = ticket.status;
         if (visibleColumns.includes('priority')) row['Prioridad'] = ticket.priority;
-        if (visibleColumns.includes('serviceType')) row['Tipo Servicio'] = ticket.serviceType;
-        if (visibleColumns.includes('reportedBy')) row['Reportado por'] = ticket.reportedBy?.fullName || 'N/A';
+        if (visibleColumns.includes('serviceType')) row['Tipo Consulta'] = ticket.serviceType;
+        if (visibleColumns.includes('reportedBy')) row['Registró'] = ticket.reportedBy?.fullName || 'N/A';
         if (visibleColumns.includes('assignedTo')) row['Asignado a'] = ticket.assignedTo?.fullName || 'No asignado';
         if (visibleColumns.includes('createdAt')) row['Creado'] = new Date(ticket.createdAt).toLocaleDateString();
         
         return row;
       });
 
-      exportToExcel(dataToExport, 'Tickets');
+      exportToExcel(dataToExport, 'Consultas');
     } catch (err) {
       console.error('Error exporting tickets:', err);
       await showError('Error', 'No se pudo exportar los datos.');
@@ -279,7 +296,7 @@ const TicketsPage: React.FC = () => {
   const allColumns = [
     {
       key: 'ticketNumber',
-      label: 'Ticket',
+      label: 'Consulta',
       render: (ticket: Ticket) => (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <span>{ticket.ticketNumber}</span>
@@ -289,8 +306,18 @@ const TicketsPage: React.FC = () => {
     },
     {
       key: 'title',
-      label: 'Título',
+      label: 'Motivo',
       render: (ticket: Ticket) => ticket.title
+    },
+    {
+      key: 'patient',
+      label: 'Paciente',
+      render: (ticket: Ticket) => ticket.patient?.fullName || 'N/A'
+    },
+    {
+      key: 'scheduledFor',
+      label: 'Fecha Programada',
+      render: (ticket: Ticket) => ticket.scheduledFor ? new Date(ticket.scheduledFor).toLocaleString() : 'No programada'
     },
     {
       key: 'equipment',
@@ -309,12 +336,12 @@ const TicketsPage: React.FC = () => {
     },
     {
       key: 'serviceType',
-      label: 'Tipo Servicio',
+      label: 'Tipo Consulta',
       render: (ticket: Ticket) => ticket.serviceType
     },
     {
       key: 'reportedBy',
-      label: 'Reportado por',
+      label: 'Registró',
       render: (ticket: Ticket) => <span>{ticket.reportedBy?.fullName || 'N/A'}</span>,
     },
     {
@@ -420,8 +447,8 @@ const TicketsPage: React.FC = () => {
             <ArrowLeft size={20} />
           </button>
           <div>
-            <h1>Gestión de Tickets</h1>
-            <p>Seguimiento a las solicitudes de mantenimiento y soporte.</p>
+            <h1>Gestión de Consultas y Citas</h1>
+            <p>Seguimiento a las consultas odontológicas y citas programadas.</p>
           </div>
         </div>
 
@@ -461,16 +488,16 @@ const TicketsPage: React.FC = () => {
                </div>
 
                <div className="form-group" style={{ marginBottom: 0 }}>
-                 <label className="form-label">Tipo de Servicio</label>
+                 <label className="form-label">Tipo de Consulta</label>
                  <select 
                     className="form-select"
                     value={filters.serviceType} 
                     onChange={(e) => setFilters({ ...filters, serviceType: e.target.value })}
                   >
                     <option value="">TODOS</option>
-                    <option value="preventivo">PREVENTIVO</option>
-                    <option value="correctivo">CORRECTIVO</option>
-                    <option value="instalacion">INSTALACIÓN</option>
+                    <option value="preventivo">VALORACIÓN</option>
+                    <option value="correctivo">TRATAMIENTO</option>
+                    <option value="instalacion">PROCEDIMIENTO</option>
                   </select>
                </div>
 
@@ -521,7 +548,7 @@ const TicketsPage: React.FC = () => {
                  <input 
                     className="form-input"
                     type="text" 
-                    placeholder="Buscar tickets..." 
+                    placeholder="Buscar consultas o citas..." 
                     value={filters.search}
                     onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                     style={{ width: '100%', paddingLeft: 40, height: '48px', fontSize: '1rem' }}
@@ -533,7 +560,7 @@ const TicketsPage: React.FC = () => {
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
             <button className={styles.btnAgregar} onClick={() => handleOpenModal()}>
               <Plus size={16} />
-              Agregar
+              Agendar
             </button>
           </div>
 
@@ -568,18 +595,20 @@ const TicketsPage: React.FC = () => {
                  <Home size={14} style={{ marginRight: 4 }} /> Inicio
               </span>
               <span style={{ margin: '0 8px' }}>/</span>
-              <span style={{ cursor: 'pointer' }} onClick={handleCloseModals}>Tickets</span>
+              <span style={{ cursor: 'pointer' }} onClick={handleCloseModals}>Consultas</span>
               <span style={{ margin: '0 8px' }}>/</span>
-              <span style={{ color: '#111827', fontWeight: 600 }}>{isEditing ? 'Editar' : 'Crear'} Ticket</span>
+              <span style={{ color: '#111827', fontWeight: 600 }}>{isEditing ? 'Editar' : 'Crear'} Consulta</span>
             </div>
             <h2 style={{ fontSize: '24px', fontWeight: 600, color: '#111827', margin: 0 }}>
-              {isEditing ? 'Editar Ticket' : 'Crear Ticket'}
+              {isEditing ? 'Editar Consulta' : 'Crear Consulta'}
             </h2>
           </div>
           <TicketForm
             onSubmit={handleSubmit}
             loading={loading}
             users={users}
+            patients={patients}
+            services={services}
             equipment={equipment}
             onCancel={handleCloseModals}
             isEditMode={isEditing}
@@ -594,6 +623,9 @@ const TicketsPage: React.FC = () => {
               assignedToId: currentTicket.assignedToId,
               reportedById: currentTicket.reportedById,
               reportedBy: currentTicket.reportedBy,
+              patientId: currentTicket.patientId,
+              patient: currentTicket.patient,
+              scheduledFor: currentTicket.scheduledFor,
               diagnosis: currentTicket.diagnosis,
               solution: currentTicket.solution,
               notes: currentTicket.notes,
@@ -612,12 +644,12 @@ const TicketsPage: React.FC = () => {
                  <Home size={14} style={{ marginRight: 4 }} /> Inicio
               </span>
               <span style={{ margin: '0 8px' }}>/</span>
-              <span style={{ cursor: 'pointer' }} onClick={handleCloseModals}>Tickets</span>
+              <span style={{ cursor: 'pointer' }} onClick={handleCloseModals}>Consultas</span>
               <span style={{ margin: '0 8px' }}>/</span>
               <span style={{ color: '#111827', fontWeight: 600 }}>{currentTicket.ticketNumber}</span>
             </div>
             <h2 style={{ fontSize: '24px', fontWeight: 600, color: '#111827', margin: 0 }}>
-              Detalles del Ticket
+              Detalles de la Consulta
             </h2>
           </div>
           <div className={styles.detailsContent}>

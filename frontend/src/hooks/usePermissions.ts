@@ -68,6 +68,17 @@ export const usePermissions = (): UsePermissionsReturn => {
     // Los administradores tienen todos los permisos
     if (user.role === 'admin') return true;
 
+    const explicitPermission = permissions.some(up =>
+      up.permission?.module === module &&
+      up.permission?.action === action &&
+      up.isActive &&
+      (!up.expiresAt || new Date(up.expiresAt) > new Date())
+    );
+
+    if (explicitPermission) {
+      return true;
+    }
+
     // Lógica basada en roles fijos (según requerimientos)
     if (user.role === 'tecnico' || user.role === 'technician') {
       // Técnico: Dashboard, Equipos, Tickets (Edición y Eliminación permitidas)
@@ -94,12 +105,7 @@ export const usePermissions = (): UsePermissionsReturn => {
       return false;
     }
 
-    return permissions.some(up =>
-      up.permission?.module === module &&
-      up.permission?.action === action &&
-      up.isActive &&
-      (!up.expiresAt || new Date(up.expiresAt) > new Date())
-    );
+    return false;
   }, [user, permissions]);
 
   // Verificar múltiples permisos (todos deben cumplirse)

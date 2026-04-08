@@ -13,7 +13,7 @@ import fs from 'fs';
 
 // Configuración
 import config from './config/config.js';
-import { testConnection, syncDatabase } from './config/database.js';
+import { sequelize, testConnection, syncDatabase } from './config/database.js';
 import appLogger from './utils/logger.js';
 // import { seedDatabase } from './seeders/initialData.js';
 
@@ -33,6 +33,7 @@ import dashboardRoutes from './routes/dashboard.js';
 import insumosRoutes from './routes/insumos.js';
 import departmentRoutes from './routes/departments.js';
 import patientRoutes from './routes/patients.js';
+import clinicalModuleRoutes from './routes/clinicalModules.js';
 
 // Crear app Koa
 const app = new Koa();
@@ -42,6 +43,22 @@ const router = new Router();
 const LOG_LEVEL = process.env.LOG_LEVEL || (config && config.server && config.server.logLevel) || 'info';
 function log(...args) { if (LOG_LEVEL !== 'silent') appLogger.info(args.join(' ')); }
 function debug(...args) { if (LOG_LEVEL === 'debug') appLogger.debug(args.join(' ')); }
+
+const clinicalPermissionModules = [
+  'doctores',
+  'historial-clinico',
+  'consentimiento-informado',
+  'justificantes',
+  'tratamientos',
+  'historial-odontograma',
+  'agenda-citas',
+  'centros-medicos',
+  'reportes-financieros',
+  'pacientes-adeudos',
+  'recetas-medicas'
+];
+
+const clinicalPermissionActions = ['view', 'create', 'edit', 'delete', 'export'];
 
 
 // Middleware globales
@@ -173,6 +190,7 @@ apiRouter.use(dashboardRoutes.routes(), dashboardRoutes.allowedMethods());
 apiRouter.use(insumosRoutes.routes(), insumosRoutes.allowedMethods());
 apiRouter.use(departmentRoutes.routes(), departmentRoutes.allowedMethods());
 apiRouter.use(patientRoutes.routes(), patientRoutes.allowedMethods());
+apiRouter.use(clinicalModuleRoutes.routes(), clinicalModuleRoutes.allowedMethods());
 
 // Registrar routers
 app.use(router.routes(), router.allowedMethods());
@@ -228,10 +246,35 @@ async function initializeDatabase() {
     log('🟡 [PIN] Sincronización desactivada por configuración (DB_SYNC=false)');
   }
 
+  await sequelize.query('ALTER TABLE tickets ADD COLUMN IF NOT EXISTS patient_id UUID REFERENCES patients(id) ON DELETE SET NULL');
+  await sequelize.query('ALTER TABLE tickets ADD COLUMN IF NOT EXISTS scheduled_for TIMESTAMPTZ NULL');
+  await sequelize.query('CREATE INDEX IF NOT EXISTS tickets_patient_id_idx ON tickets(patient_id)');
+  await sequelize.query('CREATE INDEX IF NOT EXISTS tickets_scheduled_for_idx ON tickets(scheduled_for)');
+  await sequelize.query('ALTER TABLE departments ADD COLUMN IF NOT EXISTS description TEXT NULL');
+  await sequelize.query('ALTER TABLE departments ADD COLUMN IF NOT EXISTS price DECIMAL(10,2) NULL');
+
+  for (const moduleName of clinicalPermissionModules) {
+    await sequelize.query(`ALTER TYPE "enum_permissions_module" ADD VALUE IF NOT EXISTS '${moduleName}'`);
+  }
+
   // Verificar si hay datos, si no, poblar
   try {
     log('🔵 [PIN] Verificando usuarios en la base de datos...');
-    const { User } = await import('./models/index.js');
+    const { User, Permission } = await import('./models/index.js');
+
+    for (const moduleName of clinicalPermissionModules) {
+      for (const action of clinicalPermissionActions) {
+        await Permission.findOrCreate({
+          where: { module: moduleName, action },
+          defaults: {
+            name: `${moduleName}:${action}`,
+            description: `Permite ${action} en el módulo ${moduleName}`,
+            is_active: true
+          }
+        });
+      }
+    }
+
     const userCount = await User.count();
     if (userCount === 0) {
       log('🟡 [PIN] No hay datos, poblando base de datos...');

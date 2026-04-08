@@ -20,6 +20,17 @@ Department.init({
     type: DataTypes.STRING(200),
     allowNull: false
   },
+  description: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  price: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true,
+    validate: {
+      min: 0
+    }
+  },
   is_active: {
     type: DataTypes.BOOLEAN,
     defaultValue: true

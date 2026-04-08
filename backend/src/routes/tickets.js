@@ -5,6 +5,9 @@ import { authenticateToken } from '../middleware/auth.js';
 
 const router = new Router({ prefix: '/tickets' });
 
+router.get('/public/appointments', ticketController.getPatientAppointments);
+router.post('/public/appointments', ticketController.createPatientAppointment);
+
 // Rutas protegidas
 router.get('/', authenticateToken, ticketController.getAllTickets);
 router.get('/deleted/history', authenticateToken, ticketController.getDeletedTickets);

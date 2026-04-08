@@ -1,8 +1,9 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { SessionTimeout } from '@/components/SessionTimeout';
+import { clinicalModuleMap } from '@/config/clinicalModules';
 import Login from '@/pages/Login';
 import Dashboard from '@/pages/Dashboard';
 import UsersPage from '@/pages/Users';
@@ -13,6 +14,8 @@ import ProfilePage from '@/pages/Profile';
 import PermissionsPage from '@/pages/Permissions';
 import DepartmentsPage from '@/pages/Departments';
 import PatientsPage from '@/pages/Patients';
+import PatientAppointmentsPage from '@/pages/PatientAppointments';
+import ClinicalModulePage from '@/pages/ClinicalModulePage';
 import Unauthorized from '@/pages/Unauthorized';
 import NotFound from '@/pages/NotFound';
 import Insumos from '@/pages/Insumos';
@@ -39,6 +42,21 @@ const HomeRedirect = () => {
   return <Navigate to="/dashboard" replace />;
 };
 
+const ClinicalModuleRoute: React.FC = () => {
+  const { moduleKey = '' } = useParams();
+  const definition = clinicalModuleMap[moduleKey];
+
+  if (!definition) {
+    return <NotFound />;
+  }
+
+  return (
+    <ProtectedRoute requiredModule={definition.permissionModule} requiredAction="view">
+      <ClinicalModulePage />
+    </ProtectedRoute>
+  );
+};
+
 const AppContent: React.FC = () => {
   const { isSessionExpired, continueSession, logout } = useAuth();
 
@@ -61,6 +79,7 @@ const AppContent: React.FC = () => {
                     />
           {/* Rutas públicas */}
           <Route path="/login" element={<Login />} />
+          <Route path="/mis-citas" element={<PatientAppointmentsPage />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
 
           {/* Rutas protegidas */}
@@ -99,6 +118,11 @@ const AppContent: React.FC = () => {
                 <PatientsPage />
               </ProtectedRoute>
             }
+          />
+
+          <Route
+            path="/modulos/:moduleKey"
+            element={<ClinicalModuleRoute />}
           />
 
           {/* Catálogo de departamentos */}

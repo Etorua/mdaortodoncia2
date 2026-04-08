@@ -28,7 +28,7 @@ const Departments: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
 
   // Column Selector State
-  const [visibleColumns, setVisibleColumns] = useState<string[]>(['dependencia', 'display_name', 'is_active', 'id']);
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(['dependencia', 'display_name', 'description', 'price', 'is_active', 'id']);
   const [showColumnSelector, setShowColumnSelector] = useState(false);
 
   const fetchDepartments = useCallback(async () => {
@@ -57,7 +57,7 @@ const Departments: React.FC = () => {
       setCurrentDepartment(dept);
       setIsEditing(true);
     } else {
-      setCurrentDepartment({ display_name: '', is_active: true });
+      setCurrentDepartment({ display_name: '', description: '', price: '', is_active: true });
       setIsEditing(false);
     }
     setIsModalOpen(true);
@@ -75,15 +75,15 @@ const Departments: React.FC = () => {
     try {
       if (isEditing && currentDepartment.id) {
         await departmentService.update(currentDepartment.id, currentDepartment);
-        showSuccess('Departamento actualizado correctamente');
+        showSuccess('Servicio actualizado correctamente');
       } else {
         await departmentService.create(currentDepartment);
-        showSuccess('Departamento creado correctamente');
+        showSuccess('Servicio creado correctamente');
       }
       handleCloseModal();
       fetchDepartments();
     } catch (err) {
-      showError('Error al guardar el departamento');
+      showError('Error al guardar el servicio');
       console.error(err);
     }
   };
@@ -93,10 +93,10 @@ const Departments: React.FC = () => {
     if (confirmed) {
       try {
         await departmentService.delete(id);
-        showSuccess('Departamento eliminado correctamente');
+        showSuccess('Servicio eliminado correctamente');
         fetchDepartments();
       } catch (err) {
-        showError('Error al eliminar el departamento');
+        showError('Error al eliminar el servicio');
         console.error(err);
       }
     }
@@ -107,12 +107,14 @@ const Departments: React.FC = () => {
       setLoading(true);
       const dataToExport = departments.map(dept => {
         const row: Record<string, any> = {};
-        if (visibleColumns.includes('dependencia')) row['Dependencia'] = 'Consultorio Dental';
-        if (visibleColumns.includes('display_name')) row['Departamento'] = dept.display_name;
+        if (visibleColumns.includes('dependencia')) row['Clínica'] = 'Consultorio Dental';
+        if (visibleColumns.includes('display_name')) row['Servicio'] = dept.display_name;
+        if (visibleColumns.includes('description')) row['Descripción'] = dept.description || '';
+        if (visibleColumns.includes('price')) row['Precio'] = dept.price ?? '';
         if (visibleColumns.includes('is_active')) row['Activo'] = dept.is_active ? 'Sí' : 'No';
         return row;
       });
-      exportToExcel(dataToExport, 'Departamentos');
+      exportToExcel(dataToExport, 'CatalogoServicios');
     } catch (err) {
       console.error('Error exporting departments:', err);
       await showError('Error', 'No se pudo exportar los datos.');
@@ -123,7 +125,8 @@ const Departments: React.FC = () => {
 
   // Filter and Pagination Logic
   const filteredDepartments = departments.filter(dept => 
-    dept.display_name.toLowerCase().includes(searchTerm.toLowerCase())
+    dept.display_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (dept.description || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredDepartments.length / limit);
@@ -131,14 +134,26 @@ const Departments: React.FC = () => {
 
   const allColumns = [
     {
-      label: 'Dependencia',
+      label: 'Clínica',
       key: 'dependencia',
       render: () => 'Consultorio Dental'
     },
     { 
-      label: 'Departamento', 
+      label: 'Servicio', 
       key: 'display_name',
       render: (dept: Department) => <div style={{ fontWeight: 500 }}>{dept.display_name}</div>
+    },
+    {
+      label: 'Descripción',
+      key: 'description',
+      render: (dept: Department) => dept.description || 'Sin descripción'
+    },
+    {
+      label: 'Precio',
+      key: 'price',
+      render: (dept: Department) => dept.price !== null && dept.price !== undefined && dept.price !== ''
+        ? `$${Number(dept.price).toFixed(2)}`
+        : 'No definido'
     },
     { 
       label: 'Activo', 
@@ -216,8 +231,8 @@ const Departments: React.FC = () => {
             <ArrowLeft size={20} />
           </button>
           <div>
-            <h1>Catálogo de Departamentos</h1>
-            <p>Administra los departamentos y áreas de la institución.</p>
+            <h1>Catálogo de Servicios</h1>
+            <p>Administra los servicios que ofrece la clínica.</p>
           </div>
         </div>
 
@@ -285,6 +300,7 @@ const Departments: React.FC = () => {
                   className="form-input"
                   type="text"
                   placeholder="Buscar departamento..."
+                  placeholder="Buscar servicio o descripción..."
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
@@ -332,25 +348,49 @@ const Departments: React.FC = () => {
                  <Home size={14} style={{ marginRight: 4 }} /> Inicio
               </span>
               <span style={{ margin: '0 8px' }}>/</span>
-              <span style={{ cursor: 'pointer' }} onClick={handleCloseModal}>Departamentos</span>
+              <span style={{ cursor: 'pointer' }} onClick={handleCloseModal}>Servicios</span>
               <span style={{ margin: '0 8px' }}>/</span>
-              <span style={{ color: '#111827', fontWeight: 600 }}>{isEditing ? 'Editar' : 'Nuevo'} Departamento</span>
+              <span style={{ color: '#111827', fontWeight: 600 }}>{isEditing ? 'Editar' : 'Nuevo'} Servicio</span>
             </div>
             <h2 style={{ fontSize: '24px', fontWeight: 600, color: '#111827', margin: 0 }}>
-              {isEditing ? 'Editar Departamento' : 'Nuevo Departamento'}
+              {isEditing ? 'Editar Servicio' : 'Nuevo Servicio'}
             </h2>
           </div>
           
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '600px' }}>
             <div className="form-group">
-              <label className="form-label" style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Nombre del Departamento</label>
+              <label className="form-label" style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Nombre del Servicio</label>
               <input
                 type="text"
                 className="form-input"
                 value={currentDepartment?.display_name || ''}
                 onChange={(e) => setCurrentDepartment({ ...currentDepartment, display_name: e.target.value })}
                 required
-                placeholder="Ej. Recursos Humanos"
+                placeholder="Ej. Limpieza dental"
+                style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '4px' }}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Descripción del Servicio</label>
+              <textarea
+                className="form-input"
+                value={currentDepartment?.description || ''}
+                onChange={(e) => setCurrentDepartment({ ...currentDepartment, description: e.target.value })}
+                placeholder="Ej. Limpieza general con valoración inicial"
+                rows={4}
+                style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '4px', resize: 'vertical' }}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Precio</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                className="form-input"
+                value={currentDepartment?.price ?? ''}
+                onChange={(e) => setCurrentDepartment({ ...currentDepartment, price: e.target.value })}
+                placeholder="Ej. 450.00"
                 style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '4px' }}
               />
             </div>
@@ -362,7 +402,7 @@ const Departments: React.FC = () => {
                   onChange={(e) => setCurrentDepartment({ ...currentDepartment, is_active: e.target.checked })}
                   style={{ width: '16px', height: '16px' }}
                 />
-                <span style={{ marginLeft: 8 }}>Departamento Activo</span>
+                <span style={{ marginLeft: 8 }}>Servicio Activo</span>
               </label>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 12, marginTop: 24 }}>
