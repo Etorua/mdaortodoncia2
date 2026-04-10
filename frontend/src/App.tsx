@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -21,6 +21,8 @@ import NotFound from '@/pages/NotFound';
 import Insumos from '@/pages/Insumos';
 import ActivitiesPage from '@/pages/Activities';
 // ...existing code...
+
+const OdontogramPage = lazy(() => import('@/pages/OdontogramPage'));
 
 const HomeRedirect = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -52,7 +54,11 @@ const ClinicalModuleRoute: React.FC = () => {
 
   return (
     <ProtectedRoute requiredModule={definition.permissionModule} requiredAction="view">
-      <ClinicalModulePage />
+      {moduleKey === 'historial-odontograma' ? (
+        <Suspense fallback={null}>
+          <OdontogramPage />
+        </Suspense>
+      ) : <ClinicalModulePage />}
     </ProtectedRoute>
   );
 };

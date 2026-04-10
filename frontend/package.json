@@ -9,6 +9,8 @@
     "start": "npm run dev"
   },
   "dependencies": {
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.17.10",
     "axios": "^1.6.2",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.293.0",
@@ -16,6 +18,7 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.1",
     "sweetalert2": "^11.26.3",
+    "three": "^0.160.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
