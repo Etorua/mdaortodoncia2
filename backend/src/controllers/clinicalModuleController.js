@@ -11,7 +11,8 @@ const ALLOWED_MODULE_KEYS = new Set([
   'centros-medicos',
   'reportes-financieros',
   'pacientes-adeudos',
-  'recetas-medicas'
+  'recetas-medicas',
+  'evolucion-pagos'
 ]);
 
 function normalizeModuleKey(moduleKey) {

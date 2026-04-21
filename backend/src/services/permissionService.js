@@ -17,6 +17,40 @@ export async function assignDefaultPermissions(user, role, grantedById, options 
 
     const rolePermissions = {
       'admin': 'ALL',
+      'doctor': [
+        { module: 'dashboard', actions: ['view'] },
+        { module: 'profile', actions: ['view', 'edit'] },
+        { module: 'tickets', actions: ['view', 'create', 'edit'] },
+        { module: 'patients', actions: ['view', 'create', 'edit'] },
+        { module: 'historial-clinico', actions: ['view', 'create', 'edit'] },
+        { module: 'consentimiento-informado', actions: ['view', 'create', 'edit'] },
+        { module: 'justificantes', actions: ['view', 'create', 'edit'] },
+        { module: 'tratamientos', actions: ['view', 'create', 'edit'] },
+        { module: 'historial-odontograma', actions: ['view', 'create', 'edit'] },
+        { module: 'agenda-citas', actions: ['view', 'create', 'edit'] },
+        { module: 'recetas-medicas', actions: ['view', 'create', 'edit'] }
+      ],
+      'asistente': [
+        { module: 'dashboard', actions: ['view'] },
+        { module: 'profile', actions: ['view', 'edit'] },
+        { module: 'tickets', actions: ['view', 'create', 'edit'] },
+        { module: 'patients', actions: ['view', 'create', 'edit'] },
+        { module: 'agenda-citas', actions: ['view', 'create', 'edit'] },
+        { module: 'historial-clinico', actions: ['view'] },
+        { module: 'consentimiento-informado', actions: ['view'] },
+        { module: 'justificantes', actions: ['view', 'create'] },
+        { module: 'tratamientos', actions: ['view'] },
+        { module: 'historial-odontograma', actions: ['view'] },
+        { module: 'recetas-medicas', actions: ['view'] }
+      ],
+      'recepcion': [
+        { module: 'dashboard', actions: ['view'] },
+        { module: 'profile', actions: ['view', 'edit'] },
+        { module: 'tickets', actions: ['view', 'create', 'edit'] },
+        { module: 'patients', actions: ['view', 'create', 'edit'] },
+        { module: 'agenda-citas', actions: ['view', 'create', 'edit'] },
+        { module: 'pacientes-adeudos', actions: ['view', 'edit'] }
+      ],
       'tecnico': [
         { module: 'dashboard', actions: ['view'] },
         { module: 'profile', actions: ['view', 'edit'] },
@@ -36,18 +70,25 @@ export async function assignDefaultPermissions(user, role, grantedById, options 
       'usuario': [
         { module: 'dashboard', actions: ['view'] },
         { module: 'profile', actions: ['view', 'edit'] },
-        { module: 'tickets', actions: ['view', 'create'] }
+        { module: 'tickets', actions: ['view', 'create', 'edit'] },
+        { module: 'patients', actions: ['view', 'create', 'edit'] },
+        { module: 'agenda-citas', actions: ['view', 'create', 'edit'] },
+        { module: 'pacientes-adeudos', actions: ['view', 'edit'] }
       ],
       'user': [
         { module: 'dashboard', actions: ['view'] },
         { module: 'profile', actions: ['view', 'edit'] },
-        { module: 'tickets', actions: ['view', 'create'] }
+        { module: 'tickets', actions: ['view', 'create', 'edit'] },
+        { module: 'patients', actions: ['view', 'create', 'edit'] },
+        { module: 'agenda-citas', actions: ['view', 'create', 'edit'] },
+        { module: 'pacientes-adeudos', actions: ['view', 'edit'] }
       ]
     };
 
     const permissionsToAssign = rolePermissions[normalizedRole] || rolePermissions['usuario'];
 
     const aliasGroups = [
+      ['patients', 'pacientes'],
       ['supplies', 'insumos'],
       ['users', 'usuarios'],
       ['equipment', 'equipos'],

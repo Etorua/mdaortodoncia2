@@ -1,4 +1,4 @@
-import { Ticket, Equipment, User } from '../models/index.js';
+import { Ticket, Equipment, User, Patient, ClinicalModuleRecord } from '../models/index.js';
 import { Op } from 'sequelize';
 
 const dashboardController = {
@@ -14,54 +14,119 @@ const dashboardController = {
       // const where = isRestricted ? { reported_by_id: user.id } : {};
       const where = {};
 
-      // Tickets stats
-      const totalTickets = await Ticket.count({ where });
-      const openTickets = await Ticket.count({ where: { ...where, status: 'nuevo' } });
-      const pendingTickets = await Ticket.count({ where: { ...where, status: 'pendiente' } });
-      // Usar solo los valores válidos del enum en la base de datos (español)
-      const inProgressTickets = await Ticket.count({ where: { ...where, status: 'en_proceso' } });
-      const closedTickets = await Ticket.count({ where: { ...where, status: 'cerrado' } });
+      const countClinicalRecords = moduleKey => ClinicalModuleRecord.count({
+        where: {
+          module_key: moduleKey,
+          is_active: true
+        }
+      });
 
-      // Equipment stats
-      const totalEquipment = await Equipment.count();
-      const operationalEquipment = await Equipment.count({ where: { status: 'operativo' } }); // Assuming 'operativo' maps to operational
-      const equipmentInRepair = await Equipment.count({ where: { status: 'maintenance' } });
+      const [
+        totalTickets,
+        openTickets,
+        pendingTickets,
+        inProgressTickets,
+        closedTickets,
+        totalEquipment,
+        operationalEquipment,
+        equipmentInRepair,
+        totalUsers,
+        activeUsers,
+        totalPatients,
+        activePatients,
+        totalDoctors,
+        totalAppointments,
+        totalTreatments,
+        totalPrescriptions,
+        totalPendingBalances,
+        totalFinancialReports,
+        totalClinicalHistories,
+        totalOdontograms,
+        totalConsents
+      ] = await Promise.all([
+        Ticket.count({ where }),
+        Ticket.count({ where: { ...where, status: 'nuevo' } }),
+        Ticket.count({ where: { ...where, status: 'pendiente' } }),
+        Ticket.count({ where: { ...where, status: 'en_proceso' } }),
+        Ticket.count({ where: { ...where, status: 'cerrado' } }),
+        Equipment.count(),
+        Equipment.count({ where: { status: 'operativo' } }),
+        Equipment.count({ where: { status: 'maintenance' } }),
+        User.count(),
+        User.count({ where: { activo: true } }),
+        Patient.count(),
+        Patient.count({ where: { activo: true } }),
+        countClinicalRecords('doctores'),
+        countClinicalRecords('agenda-citas'),
+        countClinicalRecords('tratamientos'),
+        countClinicalRecords('recetas-medicas'),
+        countClinicalRecords('pacientes-adeudos'),
+        countClinicalRecords('reportes-financieros'),
+        countClinicalRecords('historial-clinico'),
+        countClinicalRecords('historial-odontograma'),
+        countClinicalRecords('consentimiento-informado')
+      ]);
 
-      // User stats
-      const totalUsers = await User.count();
-      const activeUsers = await User.count({ where: { activo: true } });
-
-      // Recent Tickets (intentar y en fallo devolver lista vacía)
-      let formattedRecentTickets = [];
+      let recentActivity = [];
       try {
-        const recentTickets = await Ticket.findAll({
-          where,
-          limit: 3,
-          order: [['created_at', 'DESC']],
-          include: [
-            { model: User, as: 'reportedBy', attributes: ['nombre_completo'] }
-          ]
+        const moduleLabels = {
+          'doctores': 'Doctor',
+          'historial-clinico': 'Historial clínico',
+          'consentimiento-informado': 'Consentimiento',
+          'justificantes': 'Justificante',
+          'tratamientos': 'Tratamiento',
+          'historial-odontograma': 'Odontograma',
+          'agenda-citas': 'Cita',
+          'centros-medicos': 'Centro médico',
+          'reportes-financieros': 'Movimiento financiero',
+          'pacientes-adeudos': 'Adeudo',
+          'recetas-medicas': 'Receta'
+        };
+
+        const recentClinicalRecords = await ClinicalModuleRecord.findAll({
+          where: { is_active: true },
+          limit: 6,
+          order: [['created_at', 'DESC']]
         });
 
-        formattedRecentTickets = recentTickets.map(t => ({
-          id: t.id,
-          ticketNumber: t.ticket_number || `TKT-${t.id.toString().padStart(5, '0')}`,
-          title: t.title,
-          status: t.status,
-          priority: t.priority,
-          createdAt: t.created_at || t.createdAt,
-          reportedBy: t.reportedBy ? t.reportedBy.nombre_completo : 'Usuario'
-        }));
-      } catch (err) {
-        console.error('Error fetching recent tickets for dashboard:', err);
-        formattedRecentTickets = [];
-      }
+        recentActivity = recentClinicalRecords.map(record => {
+          const data = record.data || {};
+          const summary =
+            data.nombrePaciente ||
+            data.paciente ||
+            data.nombre ||
+            data.tratamiento ||
+            data.concepto ||
+            data.procedimiento ||
+            'Registro actualizado';
 
-      console.log('Enviando tickets recientes al dashboard:', formattedRecentTickets.length);
+          return {
+            id: record.id,
+            moduleKey: record.module_key,
+            moduleLabel: moduleLabels[record.module_key] || record.module_key,
+            summary,
+            createdAt: record.created_at || record.createdAt
+          };
+        });
+      } catch (err) {
+        console.error('Error fetching recent clinical activity for dashboard:', err);
+        recentActivity = [];
+      }
 
       ctx.body = {
         success: true,
         data: {
+          totalPatients,
+          activePatients,
+          totalDoctors,
+          totalAppointments,
+          totalTreatments,
+          totalPrescriptions,
+          totalPendingBalances,
+          totalFinancialReports,
+          totalClinicalHistories,
+          totalOdontograms,
+          totalConsents,
           totalTickets,
           openTickets,
           pendingTickets,
@@ -72,7 +137,7 @@ const dashboardController = {
           equipmentInRepair,
           totalUsers,
           activeUsers,
-          recentTickets: formattedRecentTickets
+          recentActivity
         }
       };
     } catch (error) {

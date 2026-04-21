@@ -45,6 +45,7 @@ function log(...args) { if (LOG_LEVEL !== 'silent') appLogger.info(args.join(' '
 function debug(...args) { if (LOG_LEVEL === 'debug') appLogger.debug(args.join(' ')); }
 
 const clinicalPermissionModules = [
+  'patients',
   'doctores',
   'historial-clinico',
   'consentimiento-informado',
@@ -302,7 +303,7 @@ async function initializeDatabase() {
 // Función para iniciar el servidor
 async function startServer() {
   try {
-    log('🔵 [PIN] Iniciando servidor ERP Mantenimiento...');
+    log('🔵 [PIN] Iniciando servidor ERP Clínico...');
     const dbSummary = await initializeDatabase();
     const server = app.listen(config.server.port, config.server.host, () => {
       log('🟢 [PIN] Servidor iniciado correctamente');
