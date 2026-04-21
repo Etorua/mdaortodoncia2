@@ -1,6 +1,6 @@
-import React, { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Float, OrbitControls, RoundedBox } from '@react-three/drei';
+import { ContactShadows, Environment, OrbitControls, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { ArrowLeft, CalendarDays, Plus, Save, Search, Trash2, UserRound } from 'lucide-react';
 import Layout from '@/components/Layout';
@@ -213,6 +213,48 @@ const ToothCell: React.FC<{
 
 type ToothKind = 'incisor' | 'canine' | 'premolar' | 'molar';
 
+const HumanDentitionModel: React.FC = () => {
+  const { scene } = useGLTF('/models/odontograma.glb');
+
+  const normalizedModel = useMemo(() => {
+    const clone = scene.clone(true);
+    const box = new THREE.Box3().setFromObject(clone);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    const maxAxis = Math.max(size.x, size.y, size.z) || 1;
+    const uniformScale = 3.2 / maxAxis;
+
+    clone.position.sub(center);
+    clone.scale.setScalar(uniformScale);
+
+    clone.traverse((node: THREE.Object3D) => {
+      const meshNode = node as THREE.Mesh;
+      if (!meshNode.isMesh) {
+        return;
+      }
+
+      meshNode.castShadow = true;
+      meshNode.receiveShadow = true;
+
+      const sourceMaterial = meshNode.material as THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial | undefined;
+      const baseColor = sourceMaterial?.color?.clone?.() || new THREE.Color('#f5efe3');
+
+      meshNode.material = new THREE.MeshPhysicalMaterial({
+        color: baseColor,
+        roughness: 0.34,
+        metalness: 0.02,
+        clearcoat: 0.45,
+        clearcoatRoughness: 0.22,
+        envMapIntensity: 0.6
+      });
+    });
+
+    return clone;
+  }, [scene]);
+
+  return <primitive object={normalizedModel} position={[0, -0.2, 0]} rotation={[0, Math.PI, 0]} />;
+};
+
 const getToothKind = (toothId: string): ToothKind => {
   const secondDigit = Number(toothId[1]);
 
@@ -232,12 +274,23 @@ const getToothKind = (toothId: string): ToothKind => {
 };
 
 const Tooth3DModel: React.FC<{ toothId: string; tooth: ToothState }> = ({ toothId, tooth }) => {
+  const surfaceToClinicalTint = (status: ToothStatus) => {
+    if (status === 'healthy') {
+      return '#fffdf8';
+    }
+    return statusMap[status].color;
+  };
+
+  const overlayOpacityFor = (status: ToothStatus, highlighted: number, healthy = 0.04) => (
+    status === 'healthy' ? healthy : highlighted
+  );
+
   const faceColors = {
-    top: statusMap[tooth.surfaces.top].color,
-    right: statusMap[tooth.surfaces.right].color,
-    bottom: statusMap[tooth.surfaces.bottom].color,
-    left: statusMap[tooth.surfaces.left].color,
-    center: statusMap[tooth.surfaces.center].color
+    top: surfaceToClinicalTint(tooth.surfaces.top),
+    right: surfaceToClinicalTint(tooth.surfaces.right),
+    bottom: surfaceToClinicalTint(tooth.surfaces.bottom),
+    left: surfaceToClinicalTint(tooth.surfaces.left),
+    center: surfaceToClinicalTint(tooth.surfaces.center)
   };
 
   const toothKind = getToothKind(toothId);
@@ -255,14 +308,16 @@ const Tooth3DModel: React.FC<{ toothId: string; tooth: ToothState }> = ({ toothI
     const shape = new THREE.Shape();
 
     if (kind === 'incisor') {
-      shape.moveTo(0, 1.02);
-      shape.bezierCurveTo(-0.26, 1.16, -0.54, 1.06, -0.64, 0.68);
-      shape.bezierCurveTo(-0.72, 0.26, -0.56, -0.18, -0.28, -0.72);
-      shape.bezierCurveTo(-0.16, -0.96, -0.08, -1.16, -0.04, -1.28);
-      shape.lineTo(0.04, -1.28);
-      shape.bezierCurveTo(0.08, -1.16, 0.16, -0.96, 0.28, -0.72);
-      shape.bezierCurveTo(0.56, -0.18, 0.72, 0.26, 0.64, 0.68);
-      shape.bezierCurveTo(0.54, 1.06, 0.26, 1.16, 0, 1.02);
+      shape.moveTo(0, 1.06);
+      shape.bezierCurveTo(-0.32, 1.12, -0.56, 0.98, -0.62, 0.68);
+      shape.bezierCurveTo(-0.68, 0.38, -0.56, 0.04, -0.36, -0.34);
+      shape.bezierCurveTo(-0.2, -0.64, -0.14, -0.88, -0.1, -1.14);
+      shape.bezierCurveTo(-0.08, -1.28, -0.06, -1.38, -0.03, -1.48);
+      shape.lineTo(0.03, -1.48);
+      shape.bezierCurveTo(0.06, -1.38, 0.08, -1.28, 0.1, -1.14);
+      shape.bezierCurveTo(0.14, -0.88, 0.2, -0.64, 0.36, -0.34);
+      shape.bezierCurveTo(0.56, 0.04, 0.68, 0.38, 0.62, 0.68);
+      shape.bezierCurveTo(0.56, 0.98, 0.32, 1.12, 0, 1.06);
       shape.closePath();
       return shape;
     }
@@ -315,12 +370,12 @@ const Tooth3DModel: React.FC<{ toothId: string; tooth: ToothState }> = ({ toothI
     const shape = new THREE.Shape();
 
     if (toothKind === 'incisor') {
-      shape.moveTo(0, 0.64);
-      shape.bezierCurveTo(-0.14, 0.72, -0.28, 0.56, -0.28, 0.22);
-      shape.bezierCurveTo(-0.28, -0.08, -0.16, -0.42, -0.06, -0.82);
-      shape.lineTo(0.06, -0.82);
-      shape.bezierCurveTo(0.16, -0.42, 0.28, -0.08, 0.28, 0.22);
-      shape.bezierCurveTo(0.28, 0.56, 0.14, 0.72, 0, 0.64);
+      shape.moveTo(0, 0.58);
+      shape.bezierCurveTo(-0.16, 0.64, -0.3, 0.48, -0.3, 0.18);
+      shape.bezierCurveTo(-0.28, -0.1, -0.18, -0.36, -0.08, -0.74);
+      shape.lineTo(0.08, -0.74);
+      shape.bezierCurveTo(0.18, -0.36, 0.28, -0.1, 0.3, 0.18);
+      shape.bezierCurveTo(0.3, 0.48, 0.16, 0.64, 0, 0.58);
       shape.closePath();
       return shape;
     }
@@ -409,12 +464,16 @@ const Tooth3DModel: React.FC<{ toothId: string; tooth: ToothState }> = ({ toothI
       metalness={0.01}
       clearcoat={0.45}
       clearcoatRoughness={0.2}
+      polygonOffset
+      polygonOffsetFactor={-2}
+      polygonOffsetUnits={-2}
+      depthWrite={false}
       side={THREE.DoubleSide}
     />
   );
 
   return (
-    <group rotation={[0.03, toothKind === 'incisor' ? -0.06 : -0.14, 0.02]}>
+    <group rotation={[0.06, toothKind === 'incisor' ? -0.28 : -0.18, 0.03]}>
       <group position={[0, 0.2, -0.29]}>
         <mesh
           castShadow
@@ -431,7 +490,7 @@ const Tooth3DModel: React.FC<{ toothId: string; tooth: ToothState }> = ({ toothI
         </mesh>
 
         <mesh
-          position={[0, toothKind === 'canine' ? 1.08 : 1.02, 0.28]}
+          position={[0, toothKind === 'canine' ? 1.08 : 1.0, 0.26]}
           scale={
             toothKind === 'incisor' ? [0.92, 0.14, 0.56]
               : toothKind === 'canine' ? [0.72, 0.12, 0.46]
@@ -441,7 +500,7 @@ const Tooth3DModel: React.FC<{ toothId: string; tooth: ToothState }> = ({ toothI
           castShadow
         >
           <sphereGeometry args={[0.42, 30, 22]} />
-          <meshPhysicalMaterial color="#fffdf9" roughness={0.14} metalness={0.01} clearcoat={0.52} clearcoatRoughness={0.14} />
+          <meshPhysicalMaterial color="#fffdf9" roughness={0.16} metalness={0.01} clearcoat={0.42} clearcoatRoughness={0.18} />
         </mesh>
 
         {(toothKind === 'incisor'
@@ -474,65 +533,130 @@ const Tooth3DModel: React.FC<{ toothId: string; tooth: ToothState }> = ({ toothI
           }
         >
           <circleGeometry args={[0.25, 34]} />
-          {overlayMaterial(faceColors.top, 0.78)}
+          {overlayMaterial(faceColors.top, overlayOpacityFor(tooth.surfaces.top, 0.34, 0.02))}
         </mesh>
 
         <mesh position={[0, toothKind === 'canine' ? 0.02 : -0.02, 0.605]} scale={toothKind === 'incisor' ? [0.72, 0.86, 1] : toothKind === 'canine' ? [0.52, 0.86, 1] : [1, 1, 1]}>
           <shapeGeometry args={[frontSurfaceShape]} />
-          {overlayMaterial(faceColors.center, 0.3)}
+          {overlayMaterial(faceColors.center, overlayOpacityFor(tooth.surfaces.center, 0.22, 0.03))}
         </mesh>
 
         <mesh position={[0, -0.06, -0.025]} rotation={[0, Math.PI, 0]} scale={toothKind === 'incisor' ? [0.72, 0.86, 1] : toothKind === 'canine' ? [0.52, 0.86, 1] : [1, 1, 1]}>
           <shapeGeometry args={[frontSurfaceShape]} />
-          {overlayMaterial(faceColors.bottom, 0.18)}
+          {overlayMaterial(faceColors.bottom, overlayOpacityFor(tooth.surfaces.bottom, 0.14, 0.02))}
         </mesh>
 
         <mesh position={[-0.45, 0.04, 0.3]} rotation={[0, Math.PI / 2, 0]} scale={toothKind === 'incisor' ? [0.28, 0.78, 0.16] : toothKind === 'canine' ? [0.24, 0.72, 0.14] : [0.42, 0.9, 0.18]}>
           <capsuleGeometry args={[0.22, 0.5, 6, 14]} />
-          {overlayMaterial(faceColors.left, 0.22)}
+          {overlayMaterial(faceColors.left, overlayOpacityFor(tooth.surfaces.left, 0.16, 0.03))}
         </mesh>
 
         <mesh position={[0.45, 0.04, 0.3]} rotation={[0, -Math.PI / 2, 0]} scale={toothKind === 'incisor' ? [0.28, 0.78, 0.16] : toothKind === 'canine' ? [0.24, 0.72, 0.14] : [0.42, 0.9, 0.18]}>
           <capsuleGeometry args={[0.22, 0.5, 6, 14]} />
-          {overlayMaterial(faceColors.right, 0.22)}
+          {overlayMaterial(faceColors.right, overlayOpacityFor(tooth.surfaces.right, 0.16, 0.03))}
         </mesh>
       </group>
 
       <group position={[0, -0.04, 0.02]}>
+        <mesh position={[0, -0.98, 0.17]} scale={[0.3, 0.12, 0.34]} castShadow>
+          <sphereGeometry args={[0.42, 20, 18]} />
+          <meshStandardMaterial color="#efe6d8" roughness={0.58} metalness={0.01} />
+        </mesh>
         {renderRoots()}
       </group>
     </group>
   );
 };
 
-const Tooth3DPreview: React.FC<{ toothId: string; tooth: ToothState }> = ({ toothId, tooth }) => (
-  <div className={styles.viewerFrame}>
-    <Canvas camera={{ position: [2.1, 1.8, 2.4], fov: 42 }} shadows>
-      <color attach="background" args={["#edf6fb"]} />
-      <fog attach="fog" args={["#edf6fb", 4.8, 7.2]} />
-      <ambientLight intensity={1.05} />
-      <hemisphereLight args={["#ffffff", "#d8e6ef", 1.15]} />
-      <directionalLight position={[4.5, 5.6, 2.4]} intensity={1.55} castShadow />
-      <pointLight position={[-2.6, 2.7, 2.1]} intensity={0.42} color="#c9f0ff" />
-      <Float speed={1.8} rotationIntensity={0.2} floatIntensity={0.25}>
-        <Tooth3DModel toothId={toothId} tooth={tooth} />
-      </Float>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.95, 0]} receiveShadow>
-        <circleGeometry args={[1.45, 56]} />
-        <meshStandardMaterial color="#d9e9f3" roughness={0.92} metalness={0} />
-      </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.93, 0]} receiveShadow>
-        <ringGeometry args={[1.1, 1.48, 56]} />
-        <meshBasicMaterial color="#ffffff" transparent opacity={0.42} side={THREE.DoubleSide} />
-      </mesh>
-      <OrbitControls enablePan={false} minDistance={2.6} maxDistance={4.2} />
-    </Canvas>
-    <div className={styles.viewerCaption}>
-      <strong>Pieza {toothId}</strong>
-      <span>Gira el modelo para revisar cada superficie.</span>
+const Tooth3DPreview: React.FC<{ toothId: string; tooth: ToothState }> = ({ toothId, tooth }) => {
+  const [viewMode, setViewMode] = useState<'full' | 'single'>('full');
+
+  return (
+    <div className={styles.viewerFrame}>
+      <Canvas
+        dpr={[1, 2]}
+        shadows
+        camera={{ position: [0, 0.55, 5.8], fov: 32, near: 0.1, far: 70 }}
+        gl={{ antialias: true, alpha: true }}
+      >
+        <color attach="background" args={["#f4efe4"]} />
+        <ambientLight intensity={0.46} />
+        <hemisphereLight intensity={0.7} color="#ffffff" groundColor="#d8d3c6" />
+        <directionalLight
+          position={[4.5, 6.5, 5.5]}
+          intensity={1.35}
+          castShadow
+          shadow-mapSize-width={2048}
+          shadow-mapSize-height={2048}
+        />
+        <pointLight position={[-3.5, 2.2, 3.2]} intensity={0.45} color="#e0f2fe" />
+        <Environment preset="studio" intensity={0.62} />
+        
+        <Suspense fallback={null}>
+          {viewMode === 'full' ? (
+            <HumanDentitionModel />
+          ) : (
+            <group position={[0, -0.05, 0]}>
+              <Tooth3DModel toothId={toothId} tooth={tooth} />
+            </group>
+          )}
+        </Suspense>
+
+        <OrbitControls 
+          enableDamping
+          enablePan={false} 
+          minDistance={3.2}
+          maxDistance={8.6}
+          minPolarAngle={Math.PI / 5}
+          maxPolarAngle={(Math.PI * 4.5) / 5}
+          makeDefault 
+        />
+        <ContactShadows position={[0, -1.95, 0]} opacity={0.38} scale={8.6} blur={2.4} far={5} />
+      </Canvas>
+      <div className={styles.viewerCaption} style={{ background: '#0f172a', color: '#f8fafc' }}>
+        <div className={styles.viewerBadge}>CALIDAD ANATÓMICA</div>
+        <strong>{viewMode === 'full' ? 'Arcada completa' : `Pieza ${toothId}`}</strong>
+        <span>
+          {viewMode === 'full'
+            ? 'Modelo humano real'
+            : `Modelo con ${parseInt(toothId) % 10 >= 6 ? '3 raíces' : (parseInt(toothId) % 10 >= 4 ? '2 raíces' : '1 raíz')}`}
+        </span>
+        <div style={{ display: 'inline-flex', gap: '0.35rem', marginLeft: 'auto' }}>
+          <button
+            type="button"
+            onClick={() => setViewMode('full')}
+            style={{
+              border: '1px solid rgba(148, 163, 184, 0.5)',
+              background: viewMode === 'full' ? '#f8fafc' : 'transparent',
+              color: viewMode === 'full' ? '#0f172a' : '#f8fafc',
+              borderRadius: '999px',
+              padding: '0.2rem 0.6rem',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            Arcada
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('single')}
+            style={{
+              border: '1px solid rgba(148, 163, 184, 0.5)',
+              background: viewMode === 'single' ? '#f8fafc' : 'transparent',
+              color: viewMode === 'single' ? '#0f172a' : '#f8fafc',
+              borderRadius: '999px',
+              padding: '0.2rem 0.6rem',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            Pieza
+          </button>
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const OdontogramPage: React.FC = () => {
   const [records, setRecords] = useState<ClinicalModuleRecord[]>([]);
@@ -995,3 +1119,5 @@ const OdontogramPage: React.FC = () => {
 };
 
 export default OdontogramPage;
+
+useGLTF.preload('/models/odontograma.glb');
